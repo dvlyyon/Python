@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import sys
 
-fileName="/mnt/disk1/vtest.mp4"
+fileName="vtest.mp4"
 if len(sys.argv) == 2:
    fileName=sys.argv[1]
 cap = cv2.VideoCapture(fileName)
