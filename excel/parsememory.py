@@ -122,6 +122,10 @@ for line in origFile:
             data.append(tmpline)
             print(tmpline)
             state = State.DATE
+assert(state==State.MF_HEAP)
+tmpline[8]=heap//1024
+data.append(tmpline)
+print(tmpline)
             
 for row in data:
     ws.append(row)
