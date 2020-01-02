@@ -32,6 +32,7 @@ for tValue in file[0]:
     tmpline.append(date)
     for col in range(1,10):
         value = str(file[col].readline()).strip()
+        print ("col:%d, value:%s",col,value)
         if col < 3 and col >=7:
             value = int(value)
         else:
@@ -70,19 +71,20 @@ c2.x_axis.title = "Time"
 c2.y_axis.title = "CPU and Memory Ratio"
 s21 = c2.series[0]
 s21.graphicalProperties.line.solidFill = "0000FF"
-s21.graphicalProperties.line.dashStyle = "sysDash"
+#s21.graphicalProperties.line.dashStyle = "sysDash"
+s21.smooth=True
 s21.graphicalProperties.line.width = 30000 # width in EMUs
 s22 = c2.series[1]
 s22.graphicalProperties.line.solidFill = "000099"
-s22.graphicalProperties.line.dashStyle = "sysDash"
+#s22.graphicalProperties.line.dashStyle = "sysDash"
 s22.graphicalProperties.line.width = 30000 # width in EMUs
 s23 = c2.series[2]
 s23.graphicalProperties.line.solidFill = "00FF00"
-s23.graphicalProperties.line.dashStyle = "sysDash"
+#s23.graphicalProperties.line.dashStyle = "sysDash"
 s23.graphicalProperties.line.width = 30000 # width in EMUs
 s24 = c2.series[3]
 s24.graphicalProperties.line.solidFill = "009900"
-s24.graphicalProperties.line.dashStyle = "sysDash"
+#s24.graphicalProperties.line.dashStyle = "sysDash"
 s24.graphicalProperties.line.width = 30000 # width in EMUs
 
 c2.y_axis.crosses = "max"
@@ -115,7 +117,7 @@ c2x.x_axis.title = "Time"
 c2x.y_axis.title = "Thread"
 s21x = c2x.series[0]
 s21x.graphicalProperties.line.solidFill = "0000FF"
-s21x.graphicalProperties.line.dashStyle = "sysDash"
+#s21x.graphicalProperties.line.dashStyle = "sysDash"
 s21x.graphicalProperties.line.width = 30000 # width in EMUs
 
 c2x.y_axis.crosses = "max"
