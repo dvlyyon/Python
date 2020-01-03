@@ -41,6 +41,7 @@ for line in origFile:
         if match:
             state=State.DATE
     elif state == State.DATE:
+        tmpline=[0,0,0,0,0,0,0,0,0,0]
         timefields = re.split('[ ]+',line.strip())
         datestr = timefields[1]+' '+timefields[2]+' '+ \
                   timefields[3]+' '+timefields[5]
