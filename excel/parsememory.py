@@ -21,6 +21,8 @@ class State(IntEnum):
     MF_TOP = 9
     SMF_TOP = 10
     MF_HEAP = 11
+    CPU = 12
+    MEM = 13
 
 origFile = open(sys.argv[1])
 
@@ -28,11 +30,11 @@ wb = Workbook()
 ws = wb.active
 ws.title = "Memory Statistics"
 
-title = ["Time", "MF VmData", "SMF VmData", "MF Memory %",  "SMF Memory %", "MF CPU %", "SMF CPU %", "MF VmRSS", "MF Heap", "MF Threads"]
+title = ["Time", "MF VmData", "SMF VmData", "MF Memory %",  "SMF Memory %", "MF CPU %", "SMF CPU %", "MF VmRSS", "MF Heap", "MF Threads", "Total CPU Used %", "Total MEM Used %"]
 data=[]
 data.append(title)
 state=State.INIT
-tmpline=[0,0,0,0,0,0,0,0,0,0]
+tmpline=[0,0,0,0,0,0,0,0,0,0,0,0]
 topmark=''
 heap=0
 for line in origFile:
@@ -41,7 +43,7 @@ for line in origFile:
         if match:
             state=State.DATE
     elif state == State.DATE:
-        tmpline=[0,0,0,0,0,0,0,0,0,0]
+        tmpline=[0,0,0,0,0,0,0,0,0,0,0,0]
         timefields = re.split('[ ]+',line.strip())
         datestr = timefields[1]+' '+timefields[2]+' '+ \
                   timefields[3]+' '+timefields[5]
@@ -72,6 +74,18 @@ for line in origFile:
         if match:
             print('Match SMF_DATA')
             tmpline[2]=int(match.group(1))
+            state=State.CPU
+    elif state == State.CPU:
+        match = re.match('^%Cpu\(s\):\s+.*\s+([0-9.]+)\s+id,.*st$',line)
+        if match:
+            print('Match CPU')
+            tmpline[10]=round(float(100-float(match.group(1))),1)
+            state=State.MEM
+    elif state == State.MEM:
+        match = re.match('^KiB\sMem\s+:\s+(\d+)\s+total,\s+(\d+)\s+free,.*cache$',line)
+        if match:
+            print('Match Mem')
+            tmpline[11]=round(float((int(match.group(1))-int(match.group(2)))/int(match.group(1))*100),1)
             state=State.MF_TOP
     elif state == State.MF_TOP:
         match1 = re.match('^.*\s+([0-9.]+)+\s+([0-9.]+)\s+[0-9:.]+\s+MF.bin',line)
