@@ -30,7 +30,7 @@ wb = Workbook()
 ws = wb.active
 ws.title = "Memory Statistics"
 
-title = ["Time", "MF VmData", "SMF VmData", "MF Memory %",  "SMF Memory %", "MF CPU %", "SMF CPU %", "MF VmRSS", "MF Heap", "MF Threads", "Total CPU Used %", "Total MEM Used %"]
+title = ["Time", "MF VmData", "SMF VmData", "Total CPU Used%", "Total Memory Used%", "MF Memory %",  "SMF Memory %", "MF CPU %", "SMF CPU %", "MF VmRSS", "MF Heap", "MF Threads"]
 data=[]
 data.append(title)
 state=State.INIT
@@ -55,7 +55,7 @@ for line in origFile:
         match = re.match('^VmRSS:\s+(\d+)\s+',line)
         if match:
             print('Match MF_VmRss')
-            tmpline[7]=int(match.group(1))
+            tmpline[9]=int(match.group(1))
             state=State.MF_DATA
     elif state == State.MF_DATA:
         match = re.match('^VmData:\s+(\d+)\s+',line)
@@ -67,7 +67,7 @@ for line in origFile:
         match = re.match('^Threads:\s+(\d+)',line)
         if match:
             print('Match MF_Thread')
-            tmpline[9]=int(match.group(1))
+            tmpline[11]=int(match.group(1))
             state=State.SMF_DATA
     elif state == State.SMF_DATA:
         match = re.match('^VmData:\s+(\d+)\s+',line)
@@ -79,13 +79,13 @@ for line in origFile:
         match = re.match('^%Cpu\(s\):\s+.*\s+([0-9.]+)\s+id,.*st$',line)
         if match:
             print('Match CPU')
-            tmpline[10]=round(float(100-float(match.group(1))),1)
+            tmpline[3]=round(float(100-float(match.group(1))),1)
             state=State.MEM
     elif state == State.MEM:
         match = re.match('^KiB\sMem\s+:\s+(\d+)\s+total,\s+(\d+)\s+free,.*cache$',line)
         if match:
             print('Match Mem')
-            tmpline[11]=round(float((int(match.group(1))-int(match.group(2)))/int(match.group(1))*100),1)
+            tmpline[4]=round(float((int(match.group(1))-int(match.group(2)))/int(match.group(1))*100),1)
             state=State.MF_TOP
     elif state == State.MF_TOP:
         match1 = re.match('^.*\s+([0-9.]+)+\s+([0-9.]+)\s+[0-9:.]+\s+MF.bin',line)
@@ -94,12 +94,12 @@ for line in origFile:
             print('Match Top')
             if match1:
                 topmark=topmark+"X"
-                tmpline[3]=float(match1.group(2))
-                tmpline[5]=float(match1.group(1))
+                tmpline[5]=float(match1.group(2))
+                tmpline[7]=float(match1.group(1))
             elif match2:
                 topmark=topmark+"S"
-                tmpline[4]=float(match2.group(2))
-                tmpline[6]=float(match2.group(1))
+                tmpline[6]=float(match2.group(2))
+                tmpline[8]=float(match2.group(1))
             if topmark.find('X')>=0 and topmark.find('S')>=0:
                 state=State.MF_HEAP
             elif topmark.find('X')>=0:
@@ -112,12 +112,12 @@ for line in origFile:
         if match1 or match2:
             if match1:
                 topmark=topmark+"X"
-                tmpline[3]=float(match1.group(2))
-                tmpline[5]=float(match1.group(1))
+                tmpline[5]=float(match1.group(2))
+                tmpline[7]=float(match1.group(1))
             elif match2:
                 topmark=topmark+"S"
-                tmpline[4]=float(match2.group(2))
-                tmpline[6]=float(match2.group(1))
+                tmpline[6]=float(match2.group(2))
+                tmpline[8]=float(match2.group(1))
             if topmark.find('X')>=0 and topmark.find('S')>=0:
                 state=State.MF_HEAP
                 topmark=''
@@ -132,13 +132,13 @@ for line in origFile:
             heap = heap + int(match1.group(2),base=16)-int(match1.group(1),base=16)
             state = State.MF_HEAP
         elif match2:
-            tmpline[8]=heap//1024
+            tmpline[10]=heap//1024
             heap=0
             data.append(tmpline)
             print(tmpline)
             state = State.DATE
 assert(state==State.MF_HEAP)
-tmpline[8]=heap//1024
+tmpline[10]=heap//1024
 data.append(tmpline)
 print(tmpline)
             
@@ -148,7 +148,7 @@ for row in data:
 data1 = Reference(ws,min_col=2, min_row=1, max_col=3, max_row=len(data))
 
 c1 = LineChart()
-c1.title = "Memory Information"
+c1.title = "CPU & Memory Information"
 c1.style = 13
 c1.y_axis.majorGridlines = None
 c1.y_axis.title = "Memory (KB)"
@@ -157,44 +157,53 @@ c1.x_axis.title = "Time"
 c1.add_data(data1, titles_from_data=True)
 
 s1 = c1.series[0]
-s1.graphicalProperties.line.solidFill = "FF0000"
+s1.graphicalProperties.line.solidFill = "0000FF"
 #s1.graphicalProperties.line.dashStyle = "sysDot"
-#s1.graphicalProperties.line.width = 100050 # width in EMUs
+s1.graphicalProperties.line.width = 30000 # width in EMUs
 
 s2 = c1.series[1]
-s2.graphicalProperties.line.solidFill = "990000"
+s2.graphicalProperties.line.solidFill = "000099"
+s2.graphicalProperties.line.width = 30000 # width in EMUs
 s2.smooth = True
 
 c2 = LineChart()
-data2 = Reference(ws, min_col=4, min_row=1, max_col=7, max_row=len(data))
+data2 = Reference(ws, min_col=4, min_row=1, max_col=9, max_row=len(data))
 # c2.grouping = "percentStacked"
 c2.add_data(data2, titles_from_data=True)
 c2.y_axis.axId =200
 c2.x_axis.title = "Time"
 c2.y_axis.title = "CPU and Memory Ratio"
 s21 = c2.series[0]
-s21.graphicalProperties.line.solidFill = "0000FF"
-#s21.graphicalProperties.line.dashStyle = "sysDash"
+s21.graphicalProperties.line.solidFill = "FF0000"
+#s21.graphicalProperties.line.dashStyle = "sysDot"
 s21.smooth=True
-s21.graphicalProperties.line.width = 30000 # width in EMUs
+s21.graphicalProperties.line.width = 40000 # width in EMUs
 s22 = c2.series[1]
-s22.graphicalProperties.line.solidFill = "000099"
-#s22.graphicalProperties.line.dashStyle = "sysDash"
-s22.graphicalProperties.line.width = 30000 # width in EMUs
+s22.graphicalProperties.line.solidFill = "990000"
+#s22.graphicalProperties.line.dashStyle = "sysDot"
+s22.graphicalProperties.line.width = 40000 # width in EMUs
 s23 = c2.series[2]
-s23.graphicalProperties.line.solidFill = "00FF00"
+s23.graphicalProperties.line.solidFill = "00FFFF"
 #s23.graphicalProperties.line.dashStyle = "sysDash"
 s23.graphicalProperties.line.width = 30000 # width in EMUs
 s24 = c2.series[3]
-s24.graphicalProperties.line.solidFill = "009900"
+s24.graphicalProperties.line.solidFill = "009999"
 #s24.graphicalProperties.line.dashStyle = "sysDash"
 s24.graphicalProperties.line.width = 30000 # width in EMUs
+s25 = c2.series[4]
+s25.graphicalProperties.line.solidFill = "00FF00"
+#s23.graphicalProperties.line.dashStyle = "sysDash"
+s25.graphicalProperties.line.width = 30000 # width in EMUs
+s26 = c2.series[5]
+s26.graphicalProperties.line.solidFill = "009900"
+#s24.graphicalProperties.line.dashStyle = "sysDash"
+s26.graphicalProperties.line.width = 30000 # width in EMUs
 
 c2.y_axis.crosses = "max"
 c1 += c2
 ws.add_chart(c1, "A"+str(len(data)+5))
 
-data1x = Reference(ws,min_col=8, min_row=1, max_col=9, max_row=len(data))
+data1x = Reference(ws,min_col=10, min_row=1, max_col=11, max_row=len(data))
 
 c1x = LineChart()
 c1x.title = "RSS Heap and Thread Information"
@@ -206,20 +215,20 @@ c1x.x_axis.title = "Time"
 c1x.add_data(data1x, titles_from_data=True)
 
 s1x = c1x.series[0]
-s1x.graphicalProperties.line.solidFill = "FF0000"
+s1x.graphicalProperties.line.solidFill = "0000FF"
 
 s2x = c1x.series[1]
-s2x.graphicalProperties.line.solidFill = "990000"
+s2x.graphicalProperties.line.solidFill = "000099"
 s2x.smooth = True
 
 c2x = LineChart()
-data2x = Reference(ws, min_col=10, min_row=1, max_col=10, max_row=len(data))
+data2x = Reference(ws, min_col=12, min_row=1, max_col=12, max_row=len(data))
 c2x.add_data(data2x, titles_from_data=True)
 c2x.y_axis.axId =300
 c2x.x_axis.title = "Time"
 c2x.y_axis.title = "Thread"
 s21x = c2x.series[0]
-s21x.graphicalProperties.line.solidFill = "0000FF"
+s21x.graphicalProperties.line.solidFill = "00FF00"
 #s21x.graphicalProperties.line.dashStyle = "sysDash"
 s21x.graphicalProperties.line.width = 30000 # width in EMUs
 

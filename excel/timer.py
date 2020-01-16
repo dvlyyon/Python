@@ -89,7 +89,7 @@ for line in file:
     else:
         tmpline.append(int(tmpline[0])-(base+(n*sampleInterval)))
     tmpline[4] = int(tmpline[4])
-    tmpline[5] = int(tmpline[5])
+    tmpline[5] = abs(int(tmpline[5]))
     data.append(tmpline)
     i = tmpline[4]//500
     if stats.get((i+1)*500):
