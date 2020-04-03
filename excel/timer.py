@@ -69,7 +69,7 @@ file=open(sys.argv[1])
 ws1 = wb.create_sheet("statistics")
 ws2 = wb.create_sheet("statistics %")
 
-sampleInterval=5000
+sampleInterval=6000
 
 title = ["Timestamp(ms)", "Timestamp(Str)", "Received Time(ms)", "Received Time(Str)",  "Delta Timestamp", "Rtime-Timestamp", "Timestamp Offset"]
 
