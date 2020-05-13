@@ -26,6 +26,7 @@ def drawLineChart(ws, srow, erow, scol, ecol, position, onlyone=False):
     if not onlyone:
         s2 = c1.series[1]
         s2.graphicalProperties.line.solidFill = "990000"
+        s2.graphicalProperties.line.width = 30000
         s2.smooth = True
     
     ws.add_chart(c1, position)
@@ -69,7 +70,7 @@ file=open(sys.argv[1])
 ws1 = wb.create_sheet("statistics")
 ws2 = wb.create_sheet("statistics %")
 
-sampleInterval=6000
+sampleInterval=5000
 
 title = ["Timestamp(ms)", "Timestamp(Str)", "Received Time(ms)", "Received Time(Str)",  "Delta Timestamp", "Rtime-Timestamp", "Timestamp Offset"]
 
@@ -130,7 +131,7 @@ for key in sorted(stats1.keys()):
 drawPieChart(ws2,1,len(piedata)+1,3,3,"E1")
 
 
-drawLineChart(ws,1,len(data),5,6, "A"+str(len(data)+5))
+drawLineChart(ws,1,len(data),5,5, "A"+str(len(data)+5), True)
 drawLineChart(ws,1,len(data),7,7, "A"+str(len(data)+25),True)
 if len(sys.argv) > 2:
     i = 2
