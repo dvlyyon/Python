@@ -97,6 +97,7 @@ c1 = LineChart()
 c1.title = "Total CPU & Memory Information"
 c1.style = 13
 c1.y_axis.majorGridlines = None
+c1.y_axis.majorUnit = 5
 c1.y_axis.title = "CPU & Memory Usage %"
 c1.x_axis.title = "Time"
 
@@ -117,6 +118,7 @@ c2 = LineChart()
 c2.title = "Individule Memory Information"
 c2.style = 13
 c2.y_axis.majorGridlines = None
+c2.y_axis.majorUnit = 5
 c2.y_axis.title = "Memory Usage %"
 c2.x_axis.title = "Time"
 
@@ -142,6 +144,7 @@ c3 = LineChart()
 c3.title = "Individule CPU Information"
 c3.style = 13
 c3.y_axis.majorGridlines = None
+c3.y_axis.majorUnit = 5
 c3.y_axis.title = "CPU Usage %"
 c3.x_axis.title = "Time"
 
@@ -165,6 +168,7 @@ c4 = LineChart()
 c4.title = "Disk (storage) Usage"
 c4.style = 13
 c4.y_axis.majorGridlines = None
+c4.y_axis.majorUnit = 1
 c4.y_axis.title = "Disk Usage"
 c4.x_axis.title = "Time"
 c4.add_data(data4, titles_from_data=True)
