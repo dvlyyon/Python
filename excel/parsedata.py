@@ -168,7 +168,7 @@ c4 = LineChart()
 c4.title = "Disk (storage) Usage"
 c4.style = 13
 c4.y_axis.majorGridlines = None
-c4.y_axis.majorUnit = 1
+# c4.y_axis.majorUnit = 1
 c4.y_axis.title = "Disk Usage"
 c4.x_axis.title = "Time"
 c4.add_data(data4, titles_from_data=True)
@@ -179,5 +179,5 @@ s41.graphicalProperties.line.width = 30000 # width in EMUs
 
 ws.add_chart(c4, "A"+str(len(data)+65))
 
-wb.save(sys.argv[1]+".telemetry.xlsx")
+wb.save(sys.argv[1]+".xlsx")
 origFile.close()
