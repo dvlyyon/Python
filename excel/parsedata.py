@@ -13,9 +13,10 @@ class State(IntEnum):
     INIT = 1
     DATE = 2
     T_CPU = 3
-    T_MEM = 4
-    T_CPU_MEM = 5
-    D_STORAGE = 6
+    T_P_MEM = 4
+    T_L_MEM = 5
+    T_CPU_MEM = 6
+    D_STORAGE = 7
 
 origFile = open(sys.argv[1])
 
@@ -23,12 +24,13 @@ wb = Workbook()
 ws = wb.active
 ws.title = "Memory Statistics"
 
-title = ["Time", "Total CPU Used%", "Total Memory Used%", "MF Memory %",  "SMF Memory %", "DBF Memory %", "MF CPU %", "SMF CPU %", "DBF CPU %", "Storage Used%"]
+title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%", "MF Memory %",  "SMF Memory %", "DBF Memory %", "MF CPU %", "SMF CPU %", "DBF CPU %", "Storage Used%"]
 data=[]
 data.append(title)
 state=State.INIT
-tmpline=[0,0,0,0,0,0,0,0,0,0] 
+tmpline=[0,0,0,0,0,0,0,0,0,0,0] 
 topmark='' 
+totalmem=0
 for line in origFile: 
     if state == State.INIT:
         match = re.match("^date$", line)
@@ -47,12 +49,19 @@ for line in origFile:
         if match:
             print('Match Total CPU')
             tmpline[1]=round(float(100-float(match.group(1))),1)
-            state=State.T_MEM
-    elif state == State.T_MEM:
-        match = re.match('^KiB\sMem\s+:\s+(\d+)\s+total,\s+(\d+)\s+free,.*cache$',line)
+            state=State.T_P_MEM
+    elif state == State.T_P_MEM:
+        match = re.match('^KiB\sMem\s+:\s+(\d+)\s+total,\s+(\d+)\s+free,\s+(\d+)\s+used,\s+(\d+)\s+buff.cache$',line)
         if match:
-            print('Match Total Mem')
+            print('Match Total P Mem')
+            totalmem = int(match.group(1))
             tmpline[2]=round(float((int(match.group(1))-int(match.group(2)))/int(match.group(1))*100),1)
+            state=State.T_L_MEM
+    elif state == State.T_L_MEM:
+        match = re.match('^KiB\sSwap:\s+.*used\.\s+(\d+)\s+avail\s+Mem\s*$',line)
+        if match:
+            print('Match Total L Mem')
+            tmpline[3]=round(float((totalmem-int(match.group(1)))/totalmem*100),1)
             state=State.T_CPU_MEM
     elif state == State.T_CPU_MEM:
         match1 = re.match('^.*\s+([0-9.]+)+\s+([0-9.]+)\s+[0-9:.]+\s+MF.bin',line)
@@ -62,18 +71,18 @@ for line in origFile:
             if match1:
                 print('Match Top MF')
                 topmark=topmark+"X"
-                tmpline[3]=float(match1.group(2))
-                tmpline[6]=float(match1.group(1))
+                tmpline[4]=float(match1.group(2))
+                tmpline[7]=float(match1.group(1))
             elif match2:
                 print('Match Top SMF')
                 topmark=topmark+"S"
-                tmpline[4]=float(match2.group(2))
-                tmpline[7]=float(match2.group(1))
+                tmpline[5]=float(match2.group(2))
+                tmpline[8]=float(match2.group(1))
             elif match3:
                 print('Match Top DBF')
                 topmark=topmark+"Z"
-                tmpline[5]=float(match3.group(2))
-                tmpline[8]=float(match3.group(1))
+                tmpline[6]=float(match3.group(2))
+                tmpline[9]=float(match3.group(1))
             if topmark.find('X')>=0 and topmark.find('S')>=0 and topmark.find('Z')>=0:
                 state=State.D_STORAGE
                 topmark=''
@@ -81,17 +90,17 @@ for line in origFile:
         match = re.match('^.*\s+([0-9.]+)%\s+\/storage$',line)
         if match:
             print('Match storage')
-            tmpline[9] = int(match.group(1))
+            tmpline[10] = int(match.group(1))
             data.append(tmpline)
             print(tmpline)
-            tmpline=[0,0,0,0,0,0,0,0,0,0]
+            tmpline=[0,0,0,0,0,0,0,0,0,0,0]
             state = State.INIT
 assert(state==State.INIT)
             
 for row in data:
     ws.append(row)
 
-data1 = Reference(ws,min_col=2, min_row=1, max_col=3, max_row=len(data))
+data1 = Reference(ws,min_col=2, min_row=1, max_col=4, max_row=len(data))
 
 c1 = LineChart()
 c1.title = "Total CPU & Memory Information"
@@ -104,16 +113,21 @@ c1.x_axis.title = "Time"
 c1.add_data(data1, titles_from_data=True)
 
 s1 = c1.series[0]
-s1.graphicalProperties.line.solidFill = "0000FF"
+s1.graphicalProperties.line.solidFill = "FF0000"
 s1.graphicalProperties.line.width = 30000 # width in EMUs
 
 s2 = c1.series[1]
 s2.graphicalProperties.line.solidFill = "00FF00"
 s2.graphicalProperties.line.width = 30000 # width in EMUs
 s2.smooth = True
+
+s2 = c1.series[2]
+s2.graphicalProperties.line.solidFill = "0000FF"
+s2.graphicalProperties.line.width = 30000 # width in EMUs
+s2.smooth = True
 ws.add_chart(c1, "A"+str(len(data)+5))
 
-data2 = Reference(ws,min_col=4, min_row=1, max_col=6, max_row=len(data))
+data2 = Reference(ws,min_col=5, min_row=1, max_col=7, max_row=len(data))
 c2 = LineChart()
 c2.title = "Individule Memory Information"
 c2.style = 13
@@ -125,7 +139,7 @@ c2.x_axis.title = "Time"
 c2.add_data(data2, titles_from_data=True)
 
 s21 = c2.series[0]
-s21.graphicalProperties.line.solidFill = "0000FF"
+s21.graphicalProperties.line.solidFill = "FF0000"
 s21.graphicalProperties.line.width = 30000 # width in EMUs
 
 s22 = c2.series[1]
@@ -133,13 +147,13 @@ s22.graphicalProperties.line.solidFill = "00FF00"
 s22.graphicalProperties.line.width = 30000 # width in EMUs
 
 s23 = c2.series[2]
-s23.graphicalProperties.line.solidFill = "FF0000"
+s23.graphicalProperties.line.solidFill = "0000FF"
 s23.graphicalProperties.line.width = 30000 # width in EMUs
 
 ws.add_chart(c2, "A"+str(len(data)+25))
 
 
-data3 = Reference(ws,min_col=7, min_row=1, max_col=9, max_row=len(data))
+data3 = Reference(ws,min_col=8, min_row=1, max_col=10, max_row=len(data))
 c3 = LineChart()
 c3.title = "Individule CPU Information"
 c3.style = 13
@@ -163,7 +177,7 @@ s33.graphicalProperties.line.solidFill = "FF0000"
 s33.graphicalProperties.line.width = 30000 # width in EMUs
 ws.add_chart(c3, "A"+str(len(data)+45))
 
-data4 = Reference(ws,min_col=10, min_row=1, max_col=10, max_row=len(data))
+data4 = Reference(ws,min_col=11, min_row=1, max_col=11, max_row=len(data))
 c4 = LineChart()
 c4.title = "Disk (storage) Usage"
 c4.style = 13
