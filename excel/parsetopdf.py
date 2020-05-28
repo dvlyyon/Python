@@ -25,20 +25,21 @@ def appendData(toList,fromDic, keys):
 
 def appendTitle(toTitle, suffix, keys):
     for name in keys:
-        toTitle.append(name + suffix)
+        toTitle.append(name[0:-4] + suffix)
 
 def cast2K(value):
     if value[-1] == 'm':
         tmpValue=float(value[0:-1])
         tmpValue = tmpValue * 1024
-        print('m========' + str(tmpValue))
     elif value[-1] == 'g':
         tmpValue=float(value[0:-1])
         tmpValue = tmpValue * 1024 * 1024
-        print('g========' + str(tmpValue))
     else:
         tmpValue=float(value)
     return tmpValue
+
+colorsPatten=[ "FF0000", "AA0000", "00FF00", "00AA00", "0000FF",  "9000FF", "00EEEE","B58215",
+               "FFAA00", "E516EB", "535BAD", "AA00FF", "00AAFF", "FFFF00", "AA00AA", "00AAAA" ]
 
 def drawLineChart(worsksheet, data, minCol, maxCol, title, yTitle, xTitle, position):
     chartData = Reference(worsksheet,min_col=minCol,min_row=1,max_col=maxCol,max_row=len(data))
@@ -47,13 +48,16 @@ def drawLineChart(worsksheet, data, minCol, maxCol, title, yTitle, xTitle, posit
     chart.title = title
     chart.style = 13
     chart.y_axis.title=yTitle
+    chart.y_axis.majorGridlines=None
     chart.x_axis.title=xTitle
 
     chart.add_data(chartData,titles_from_data=True)
 
-    for n in range(0,maxCol-minCol):
+    for n in range(0,maxCol-minCol+1):
         style = chart.series[n]
-        style.graphicalProperties.line.width = 30000
+        if n < len(colorsPatten):
+            style.graphicalProperties.line.solidFill = colorsPatten[n]
+        style.graphicalProperties.line.width = 22000
         style.smooth=True
     worsksheet.add_chart(chart, "A"+str(len(data)+position))
 
@@ -136,6 +140,7 @@ for line in origFile:
                     appendTitle(title,' MEM%',processNameList)
                     appendTitle(title,' VIR(KB)',processNameList)
                     appendTitle(title,' RES(KB)',processNameList)
+                    title.append("DB Usage%")
                 processCollected=True
                 appendData(tmpline,processDataCPU,processNameList)
                 appendData(tmpline,processDataMEM,processNameList)
@@ -149,7 +154,6 @@ for line in origFile:
         match = re.match('^.*\s+([0-9.]+)%\s+\/storage$',line)
         if match:
             print('Match storage')
-            title.append("DB Usage%")
             tmpline.append(int(match.group(1)))
             data.append(tmpline)
             print(tmpline)
@@ -167,7 +171,7 @@ drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Time No
 drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Time No.",65)
 drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Time No.",85)
 drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Time No.",105)
-drawLineChart(ws,data,7+processNum*4,6+processNum*5,"Disk Usage", "Usage %","Time No.",125)
+drawLineChart(ws,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Time No.",125)
 
 wb.save(sys.argv[1]+".xlsx")
 origFile.close()
