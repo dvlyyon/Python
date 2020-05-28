@@ -41,8 +41,8 @@ def cast2K(value):
 colorsPatten=[ "FF0000", "AA0000", "00FF00", "00AA00", "0000FF",  "9000FF", "00EEEE","B58215",
                "FFAA00", "E516EB", "535BAD", "AA00FF", "00AAFF", "FFFF00", "AA00AA", "00AAAA" ]
 
-def drawLineChart(worsksheet, data, minCol, maxCol, title, yTitle, xTitle, position):
-    chartData = Reference(worsksheet,min_col=minCol,min_row=1,max_col=maxCol,max_row=len(data))
+def drawLineChartInChartSheet(worksheet, chartSheet, data, minCol, maxCol, title, yTitle, xTitle, position):
+    chartData = Reference(worksheet,min_col=minCol,min_row=1,max_col=maxCol,max_row=len(data))
 
     chart = LineChart()
     chart.title = title
@@ -59,13 +59,35 @@ def drawLineChart(worsksheet, data, minCol, maxCol, title, yTitle, xTitle, posit
             style.graphicalProperties.line.solidFill = colorsPatten[n]
         style.graphicalProperties.line.width = 22000
         style.smooth=True
-    worsksheet.add_chart(chart, "A"+str(len(data)+position))
+    chartSheet.add_chart(chart) 
+
+def drawLineChart(worksheet, data, minCol, maxCol, title, yTitle, xTitle, position):
+    chartData = Reference(worksheet,min_col=minCol,min_row=1,max_col=maxCol,max_row=len(data))
+
+    chart = LineChart()
+    chart.title = title
+    chart.style = 13
+    chart.y_axis.title=yTitle
+    chart.y_axis.majorGridlines=None
+    chart.x_axis.title=xTitle
+
+    chart.add_data(chartData,titles_from_data=True)
+
+    for n in range(0,maxCol-minCol+1):
+        style = chart.series[n]
+        if n < len(colorsPatten):
+            style.graphicalProperties.line.solidFill = colorsPatten[n]
+        style.graphicalProperties.line.width = 22000
+        style.smooth=True
+    worksheet.add_chart(chart, "A"+str(len(data)+position))
 
 origFile = open(sys.argv[1])
 
 wb = Workbook()
 ws = wb.active
-ws.title = "Memory Statistics"
+cs = wb.create_chartsheet(title='CPU_MEM_DISK Chart',index=0)
+
+ws.title = "CPU_MEM_DISK Data"
 
 title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(KB)","Total Avail Mem(KB)"]
 data=[]
@@ -164,14 +186,21 @@ assert(state==State.INIT)
 for row in data:
     ws.append(row)
 
-drawLineChart(ws,data,2,4,"Total CPU & Memory Usage","Usage %","Time No.", 5)
-drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Time No.",25)
 processNum=len(processNameList)
-drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Time No.", 45)
-drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Time No.",65)
-drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Time No.",85)
-drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Time No.",105)
-drawLineChart(ws,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Time No.",125)
+#drawLineChart(cs,data,2,4,"Total CPU & Memory Usage","Usage %","Time No.", 5)
+#drawLineChart(cs,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Time No.",25)
+#drawLineChart(cs,data,7,6+processNum,"CPU Usage per Process", "Usage %","Time No.", 45)
+#drawLineChart(cs,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Time No.",65)
+#drawLineChart(cs,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Time No.",85)
+#drawLineChart(cs,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Time No.",105)
+#drawLineChart(cs,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Time No.",125)
+drawLineChartInChartSheet(ws,cs,data,2,4,"Total CPU & Memory Usage","Usage %","Time No.", 5)
+drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Time No.",5)
+drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Time No.", 25)
+drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Time No.",45)
+drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Time No.",65)
+drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Time No.",85)
+drawLineChart(ws,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Time No.",105)
 
 wb.save(sys.argv[1]+".xlsx")
 origFile.close()
