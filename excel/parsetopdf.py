@@ -191,13 +191,6 @@ for row in data:
     ws.append(row)
 
 processNum=len(processNameList)
-#drawLineChart(cs,data,2,4,"Total CPU & Memory Usage","Usage %","Time No.", 5)
-#drawLineChart(cs,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Time No.",45)
-#drawLineChart(cs,data,7,6+processNum,"CPU Usage per Process", "Usage %","Time No.", 85)
-#drawLineChart(cs,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Time No.",125)
-#drawLineChart(cs,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Time No.",165)
-#drawLineChart(cs,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Time No.",205)
-#drawLineChart(cs,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Time No.",125)
 drawLineChartInChartSheet(ws,cs,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
 drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Timestamp No.",5)
 drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timestamp No.", 35)
