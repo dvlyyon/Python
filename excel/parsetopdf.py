@@ -128,20 +128,20 @@ for line in origFile:
         timefields = re.split('[ ]+',line.strip())
         datestr = timefields[1]+' '+timefields[2]+' '+ \
                   timefields[3]+' '+timefields[5]
-        print(datestr)
+#        print(datestr)
         date = datetime.datetime.strptime(datestr,'%b %d %H:%M:%S %Y')
         tmpline[0]=date
         state = State.T_CPU
     elif state == State.T_CPU:
         match = re.match('^%Cpu\(s\):\s+.*\s+([0-9.]+)\s+id,.*st$',line)
         if match:
-            print('Match Total CPU')
+#            print('Match Total CPU')
             tmpline[1]=round(float(100-float(match.group(1))),1)
             state=State.T_P_MEM
     elif state == State.T_P_MEM:
         match = re.match('^KiB\sMem\s+:\s+(\d+)\s+total,\s+(\d+)\s+free,\s+(\d+)\s+used,\s+(\d+)\s+buff.cache$',line)
         if match:
-            print('Match Total P Mem')
+#            print('Match Total P Mem')
             totalmem = int(match.group(1))
             tmpline[2]=round(float((int(match.group(1))-int(match.group(2)))/int(match.group(1))*100),1)
             tmpline[4]=int(match.group(2))
@@ -149,7 +149,7 @@ for line in origFile:
     elif state == State.T_L_MEM:
         match = re.match('^KiB\sSwap:\s+.*used\.\s+(\d+)\s+avail\s+Mem\s*$',line)
         if match:
-            print('Match Total L Mem')
+#            print('Match Total L Mem')
             tmpline[3]=round(float((totalmem-int(match.group(1)))/totalmem*100),1)
             tmpline[5]=int(match.group(1))
             state=State.T_CPU_MEM
@@ -158,7 +158,7 @@ for line in origFile:
         match = re.match('^\s*(\d+)\s+root\s+(\d+)\s+(\d+)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+(\d+)\s+\w+\s+([0-9.]+)\s+([0-9.]+)\s+[0-9:.]+\s+(\w+\.bin)',line)
         if match: 
             processName=match.group(9)
-            print('Match ' + processName)
+#            print('Match ' + processName)
             if not processCollected:
                 processNameList.append(processName)
             else:
@@ -191,7 +191,7 @@ for line in origFile:
         match = re.match('^[\w\d/]+\s+\d+\s+\d+\s+\d+\s+([0-9.]+)%\s+(\/|\/storage.*)$',line)
         if match:
             mountPoint=match.group(2)
-            print('Match storage:' + mountPoint)
+#            print('Match storage:' + mountPoint)
             if mountPointCollected:
                 assert mountPoint in mountPointList
             else:
@@ -206,7 +206,7 @@ for line in origFile:
                 appendData(tmpline,mountPointData,mountPointList)
                 mountPointData.clear()
                 data.append(tmpline)
-                print(tmpline)
+#                print(tmpline)
                 assert len(tmpline) == len(title)
                 tmpline=[0,0,0,0,0,0]
                 state = State.INIT
