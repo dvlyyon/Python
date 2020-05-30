@@ -23,9 +23,17 @@ def appendData(toList,fromDic, keys):
     for name in keys:
         toList.append(fromDic[name])
 
-def appendTitle(toTitle, suffix, keys):
+def appendProcessTitle(toTitle, suffix, keys):
     for name in keys:
         toTitle.append(name[0:-4] + suffix)
+
+def appendFileSystemTitle(toTitle, keys):
+    for name in keys:
+#        if name == '/':
+#            tmpString='root'
+#        else:
+#            tmpString=name.replace('/',' ')
+        toTitle.append('FS '+name+ ' Usage%')
 
 def cast2K(value):
     if value[-1] == 'm':
@@ -89,9 +97,10 @@ origFile = open(sys.argv[1])
 
 wb = Workbook()
 ws = wb.active
-cs = wb.create_chartsheet(title='CPU_MEM_DISK Chart',index=0)
+csTotal = wb.create_chartsheet(title='Total CPU & Memory',index=0)
+csDisk = wb.create_chartsheet(title='Dist Usage', index=1)
 
-ws.title = "CPU_MEM_DISK Data"
+ws.title = "Detailed CPU Memory"
 
 title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(KB)","Total Avail Mem(KB)"]
 data=[]
@@ -106,6 +115,9 @@ processDataRES={}
 processDataCPU={}
 processDataMEM={}
 processCollected=False
+mountPointCollected=False
+mountPointList=[]
+mountPointData={}
 entry=State.INIT
 for line in origFile: 
     if state == State.INIT:
@@ -162,11 +174,10 @@ for line in origFile:
             if entry == State.T_CPU_MEM:
                 state=State.D_STORAGE
                 if not processCollected:
-                    appendTitle(title,' CPU%',processNameList)
-                    appendTitle(title,' MEM%',processNameList)
-                    appendTitle(title,' VIR(KB)',processNameList)
-                    appendTitle(title,' RES(KB)',processNameList)
-                    title.append("DB Usage%")
+                    appendProcessTitle(title,' CPU%',processNameList)
+                    appendProcessTitle(title,' MEM%',processNameList)
+                    appendProcessTitle(title,' VIR(KB)',processNameList)
+                    appendProcessTitle(title,' RES(KB)',processNameList)
                 processCollected=True
                 appendData(tmpline,processDataCPU,processNameList)
                 appendData(tmpline,processDataMEM,processNameList)
@@ -177,27 +188,44 @@ for line in origFile:
                 processDataRES.clear()
                 processDataVIR.clear()
     elif state == State.D_STORAGE:
-        match = re.match('^.*\s+([0-9.]+)%\s+\/storage$',line)
+        match = re.match('^[\w\d/]+\s+\d+\s+\d+\s+\d+\s+([0-9.]+)%\s+(\/|\/storage.*)$',line)
         if match:
-            print('Match storage')
-            tmpline.append(int(match.group(1)))
-            data.append(tmpline)
-            print(tmpline)
-            tmpline=[0,0,0,0,0,0]
-            state = State.INIT
+            mountPoint=match.group(2)
+            print('Match storage:' + mountPoint)
+            if mountPointCollected:
+                assert mountPoint in mountPointList
+            else:
+                mountPointList.append(mountPoint)
+            mountPointData[mountPoint]=int(match.group(1))
+            entry=State.D_STORAGE
+        else:
+            if entry == State.D_STORAGE:
+                if not mountPointCollected:
+                    appendFileSystemTitle(title,mountPointList)
+                mountPointCollected=True
+                appendData(tmpline,mountPointData,mountPointList)
+                mountPointData.clear()
+                data.append(tmpline)
+                print(tmpline)
+                assert len(tmpline) == len(title)
+                tmpline=[0,0,0,0,0,0]
+                state = State.INIT
 assert(state==State.INIT)
             
 for row in data:
     ws.append(row)
 
 processNum=len(processNameList)
-drawLineChartInChartSheet(ws,cs,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
+mountPointNum=len(mountPointList)
+drawLineChartInChartSheet(ws,csTotal,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
+drawLineChartInChartSheet(ws,csDisk,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %", "Timestamp No.",5)
+#drawLineChart(ws,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
 drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Timestamp No.",5)
 drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timestamp No.", 35)
 drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Timestamp No.",65)
 drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Timestamp No.",95)
 drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Timestamp No.",125)
-drawLineChart(ws,data,7+processNum*4,7+processNum*4,"Disk Usage", "Usage %","Timestamp No.",155)
+#drawLineChart(ws,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %","Timestamp No.",155)
 
 wb.save(sys.argv[1]+".xlsx")
 origFile.close()
