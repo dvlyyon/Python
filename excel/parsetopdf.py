@@ -46,7 +46,7 @@ def cast2K(value):
         tmpValue=float(value)
     return tmpValue
 
-colorsPatten=[ "FF0000", "AA0000", "00FF00", "00AA00", "0000FF",  "9000FF", "00EEEE","B58215",
+colorsPatten=[ "FF0000", "00FF00", "0000FF", "00AA00",  "9000FF", "AA0000", "00EEEE", "B58215",
                "FFAA00", "E516EB", "535BAD", "AA00FF", "00AAFF", "FFFF00", "AA00AA", "00AAAA" ]
 
 def drawLineChartInChartSheet(worksheet, chartSheet, data, minCol, maxCol, title, yTitle, xTitle, position):
@@ -68,6 +68,47 @@ def drawLineChartInChartSheet(worksheet, chartSheet, data, minCol, maxCol, title
             style.graphicalProperties.line.solidFill = colorsPatten[n]
         style.graphicalProperties.line.width = 22000
         style.smooth=True
+    chartSheet.add_chart(chart) 
+
+def drawMixLineChartInChartSheet(worksheet, chartSheet, data, minCol, maxCol, title, yTitle, xTitle, minCol1, maxCol1, yTitle1):
+    chartData = Reference(worksheet,min_col=minCol,min_row=1,max_col=maxCol,max_row=len(data))
+    chartData1 = Reference(worksheet,min_col=minCol1,min_row=1,max_col=maxCol1,max_row=len(data))
+
+    chart = LineChart()
+    chart.title = title
+    chart.style = 13
+    chart.y_axis.title=yTitle
+    chart.y_axis.majorGridlines=None
+    chart.x_axis.title=xTitle
+
+    chart.add_data(chartData,titles_from_data=True)
+    chart.legend.position='t'
+
+    for n in range(0,maxCol-minCol+1):
+        style = chart.series[n]
+        if n < len(colorsPatten):
+            style.graphicalProperties.line.solidFill = colorsPatten[n]
+        style.graphicalProperties.line.width = 22000
+        style.smooth=True
+
+    chart1 = LineChart()
+    chart1.add_data(chartData1,titles_from_data=True)
+    chart1.y_axis.axId = 200
+    chart1.y_axis.title=yTitle1
+    chart1.x_axis.title=xTitle
+
+    chart.legend.position='t'
+
+    for n in range(maxCol-minCol+1,maxCol-minCol+2+maxCol1-minCol1):
+        style = chart1.series[n-maxCol+minCol-1]
+        if n < len(colorsPatten):
+            style.graphicalProperties.line.solidFill = colorsPatten[n]
+        style.graphicalProperties.line.width = 40000
+        style.smooth=True
+
+    chart1.y_axis.crosses = "max"
+    chart += chart1
+
     chartSheet.add_chart(chart) 
 
 def drawLineChart(worksheet, data, minCol, maxCol, title, yTitle, xTitle, position):
@@ -217,15 +258,15 @@ for row in data:
 
 processNum=len(processNameList)
 mountPointNum=len(mountPointList)
-drawLineChartInChartSheet(ws,csTotal,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
+drawMixLineChartInChartSheet(ws,csTotal,data,2,4,"Total CPU & Memory ","Usage %","Timestamp No.", 5, 6, "Size (KB)")
 drawLineChartInChartSheet(ws,csDisk,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %", "Timestamp No.",5)
 #drawLineChart(ws,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
-drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Timestamp No.",5)
-drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timestamp No.", 35)
-drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Timestamp No.",65)
-drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Timestamp No.",95)
-drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Timestamp No.",125)
-#drawLineChart(ws,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %","Timestamp No.",155)
+#drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Timestamp No.",5)
+drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timestamp No.", 5)
+drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Timestamp No.",35)
+drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Timestamp No.",65)
+drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Timestamp No.",95)
+#drawLineChart(ws,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %","Timestamp No.",125)
 
 wb.save(sys.argv[1]+".xlsx")
 origFile.close()
