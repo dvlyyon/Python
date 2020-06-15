@@ -5,6 +5,7 @@ import re
 from enum import IntEnum
 from openpyxl import Workbook
 import datetime
+import json
 
 from openpyxl.chart import (LineChart, Reference,)
 from openpyxl.chart.axis import DateAxis
@@ -18,22 +19,27 @@ class State(IntEnum):
     T_CPU_MEM = 6
     D_STORAGE = 7
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o,datetime.datetime):
+            return o.isoformat()
+        return json.JSONEncoder.default(self,o)
 
 def appendData(toList,fromDic, keys):
-    for name in keys:
+    for name in sorted(keys):
         toList.append(fromDic[name])
 
 def appendProcessTitle(toTitle, suffix, keys):
-    for name in keys:
+    for name in sorted(keys):
         toTitle.append(name[0:-4] + suffix)
 
 def appendFileSystemTitle(toTitle, keys):
-    for name in keys:
+    for name in sorted(keys):
 #        if name == '/':
 #            tmpString='root'
 #        else:
 #            tmpString=name.replace('/',' ')
-        toTitle.append('FS '+name+ ' Usage%')
+        toTitle.append('FS: '+name)
 
 def cast2K(value):
     if value[-1] == 'm':
@@ -145,9 +151,13 @@ ws.title = "Detailed CPU Memory"
 
 title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(KB)","Total Avail Mem(KB)"]
 data=[]
+jsonData=[]
 data.append(title)
+jsonTitle=title.copy()
+jsonData.append(jsonTitle)
 state=State.INIT
 tmpline=[0,0,0,0,0,0] 
+jsonline=tmpline.copy()
 totalmem=0
 processNum=0
 processNameList=[]
@@ -193,6 +203,7 @@ for line in origFile:
 #            print('Match Total L Mem')
             tmpline[3]=round(float((totalmem-int(match.group(1)))/totalmem*100),1)
             tmpline[5]=int(match.group(1))
+            jsonline=tmpline.copy()
             state=State.T_CPU_MEM
             entry=State.T_L_MEM
     elif state == State.T_CPU_MEM:
@@ -243,18 +254,28 @@ for line in origFile:
             if entry == State.D_STORAGE:
                 if not mountPointCollected:
                     appendFileSystemTitle(title,mountPointList)
+                    appendFileSystemTitle(jsonTitle,mountPointList)
                 mountPointCollected=True
                 appendData(tmpline,mountPointData,mountPointList)
+                appendData(jsonline,mountPointData,mountPointList)
                 mountPointData.clear()
                 data.append(tmpline)
+                jsonData.append(jsonline)
 #                print(tmpline)
                 assert len(tmpline) == len(title)
+                assert len(jsonline) == len(jsonTitle)
                 tmpline=[0,0,0,0,0,0]
+                jsonline=tmpline.copy()
                 state = State.INIT
 assert(state==State.INIT)
             
 for row in data:
     ws.append(row)
+
+with open(sys.argv[1]+".txt", 'w') as json_file:
+    json.dump(jsonData, json_file, cls=DateTimeEncoder)
+
+jsonData.clear()
 
 processNum=len(processNameList)
 mountPointNum=len(mountPointList)
