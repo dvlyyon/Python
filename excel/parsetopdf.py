@@ -172,15 +172,14 @@ mountPointData={}
 entry=State.INIT
 for line in origFile: 
     if state == State.INIT:
-        match = re.match("^date$", line)
+        match = re.match("^date -Iseconds$", line)
         if match: 
             state=State.DATE 
     elif state == State.DATE:
-        timefields = re.split('[ ]+',line.strip())
-        datestr = timefields[1]+' '+timefields[2]+' '+ \
-                  timefields[3]+' '+timefields[5]
+        timestr = line.strip()
+        datestr = timestr[:19]+timestr[19:].replace(":","")
 #        print(datestr)
-        date = datetime.datetime.strptime(datestr,'%b %d %H:%M:%S %Y')
+        date = datetime.datetime.strptime(datestr,'%Y-%m-%dT%H:%M:%S%z')
         tmpline[0]=date
         state = State.T_CPU
     elif state == State.T_CPU:
