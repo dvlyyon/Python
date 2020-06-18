@@ -151,13 +151,9 @@ ws.title = "Detailed CPU Memory"
 
 title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(KB)","Total Avail Mem(KB)"]
 data=[]
-jsonData=[]
 data.append(title)
-jsonTitle=title.copy()
-jsonData.append(jsonTitle)
 state=State.INIT
 tmpline=[0,0,0,0,0,0] 
-jsonline=tmpline.copy()
 totalmem=0
 processNum=0
 processNameList=[]
@@ -170,16 +166,30 @@ mountPointCollected=False
 mountPointList=[]
 mountPointData={}
 entry=State.INIT
+newDate=True
 for line in origFile: 
     if state == State.INIT:
         match = re.match("^date -Iseconds$", line)
+        if match:
+            newDate = True
+        else:
+            match = re.match("^date$", line)
+            if match:
+                newDate = False
         if match: 
             state=State.DATE 
     elif state == State.DATE:
         timestr = line.strip()
-        datestr = timestr[:19]+timestr[19:].replace(":","")
 #        print(datestr)
-        date = datetime.datetime.strptime(datestr,'%Y-%m-%dT%H:%M:%S%z')
+        if newDate:
+            datestr = timestr[:19]+timestr[19:].replace(":","")
+            date = datetime.datetime.strptime(datestr,'%Y-%m-%dT%H:%M:%S%z')
+        else:
+            timefields = re.split('[ ]+',timestr)
+            datestr = timefields[1]+' '+timefields[2]+' '+ \
+                      timefields[3]+' '+timefields[5]
+
+            date = datetime.datetime.strptime(datestr,'%b %d %H:%M:%S %Y')
         tmpline[0]=date
         state = State.T_CPU
     elif state == State.T_CPU:
@@ -253,18 +263,13 @@ for line in origFile:
             if entry == State.D_STORAGE:
                 if not mountPointCollected:
                     appendFileSystemTitle(title,mountPointList)
-                    appendFileSystemTitle(jsonTitle,mountPointList)
                 mountPointCollected=True
                 appendData(tmpline,mountPointData,mountPointList)
-                appendData(jsonline,mountPointData,mountPointList)
                 mountPointData.clear()
                 data.append(tmpline)
-                jsonData.append(jsonline)
 #                print(tmpline)
                 assert len(tmpline) == len(title)
-                assert len(jsonline) == len(jsonTitle)
                 tmpline=[0,0,0,0,0,0]
-                jsonline=tmpline.copy()
                 state = State.INIT
 assert(state==State.INIT)
             
@@ -272,9 +277,7 @@ for row in data:
     ws.append(row)
 
 with open(sys.argv[1]+".txt", 'w') as json_file:
-    json.dump(jsonData, json_file, cls=DateTimeEncoder)
-
-jsonData.clear()
+    json.dump(data, json_file, cls=DateTimeEncoder)
 
 processNum=len(processNameList)
 mountPointNum=len(mountPointList)
