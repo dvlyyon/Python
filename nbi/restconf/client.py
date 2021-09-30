@@ -2,7 +2,7 @@ import http.client as httpclient
 import ssl
 from base64 import b64encode
 
-class RestcconfSession():
+class RestconfSession():
 
     def __init__(self, host, port, username, password):
         self.host = host
@@ -39,13 +39,13 @@ class RestcconfSession():
         response = self.conn.getresponse()
         return self._parseresponse(response)
 
-    def close():
+    def close(self):
         if self.conn:
             self.conn.close()
         self.conn = None
 
 if __name__ == '__main__':
-    sess = RestcconfSession("10.13.16.24",8181,"administrator","e2e!Net4u#")
+    sess = RestconfSession("10.13.16.24",8181,"administrator","e2e!Net4u#")
     print(sess.connect())
     s, r, d = sess.get("ioa-network-element:ne/equipment/card")
     print(d)
