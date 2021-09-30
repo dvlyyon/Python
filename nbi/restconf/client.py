@@ -23,9 +23,10 @@ class RestcconfSession():
         response = self.conn.getresponse()
         status = response.status
         reason = response.reason
+        data = response.read()
         if status == 200:
-            self.root_url = response.read().decode('utf-8').split('href=')[1].split("'")[0]
-        return (status, reason)
+            self.root_url = data.decode('utf-8').split("href='")[1].split("'")[0]
+        return (status, reason, data.decode('utf-8'))
 
     def _parseresponse(self,response):
         status = response.status
@@ -38,11 +39,16 @@ class RestcconfSession():
         response = self.conn.getresponse()
         return self._parseresponse(response)
 
+    def close():
+        if self.conn:
+            self.conn.close()
+        self.conn = None
 
-sess = RestcconfSession("10.13.16.24",8181,"administrator","e2e!Net4u#")
-print(sess.connect())
-s, r, d = sess.get("ioa-network-element:ne/equipment/card")
-print(d)
+if __name__ == '__main__':
+    sess = RestcconfSession("10.13.16.24",8181,"administrator","e2e!Net4u#")
+    print(sess.connect())
+    s, r, d = sess.get("ioa-network-element:ne/equipment/card")
+    print(d)
 # username="administrator"
 # password="e2e!Net4u#"
 # credential = b64encode(f"{username}:{password}".encode('utf-8')).decode("ascii")
