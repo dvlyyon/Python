@@ -171,7 +171,9 @@ mountPointList=[]
 mountPointData={}
 entry=State.INIT
 newDate=True
+lineNum=0
 for line in origFile: 
+    lineNum += 1
     if state == State.INIT:
         match = re.match("^date -Iseconds$", line)
         if match:
@@ -184,7 +186,7 @@ for line in origFile:
             state=State.DATE 
     elif state == State.DATE:
         timestr = line.strip()
-#        print(timestr)
+        print(timestr)
         if newDate:
             datestr = timestr[:19]+timestr[19:].replace(":","")
             date = datetime.datetime.strptime(datestr,'%Y-%m-%dT%H:%M:%S%z')
@@ -199,13 +201,17 @@ for line in origFile:
     elif state == State.T_CPU:
         match = re.match('^%Cpu\(s\):\s+.*([0-9.]+)\s+id,.*st$',line)
         if match:
-#            print('Match Total CPU')
+            print('Match Total CPU')
             tmpline[1]=round(float(100-float(match.group(1))),1)
             state=State.T_P_MEM
+        else:
+            match = re.match("^date -Iseconds$", line)
+            if match:
+                break
     elif state == State.T_P_MEM:
         match = re.match('^[KM]iB\sMem\s+:\s+([\d.]+)\s+total,\s+([\d.]+)\s+free,\s+([\d.]+)\s+used,\s+([\d.]+)\s+buff.cache$',line)
         if match:
-#            print('Match Total P Mem')
+            print('Match Total P Mem')
             totalmem = float(match.group(1))
             tmpline[2]=round(float((float(match.group(1))-float(match.group(2)))/float(match.group(1))*100),1)
             tmpline[4]=float(match.group(2))
@@ -213,7 +219,7 @@ for line in origFile:
     elif state == State.T_L_MEM:
         match = re.match('^[KM]iB\sSwap:\s+.*used\.\s+([\d.]+)\s+avail\s+Mem\s*$',line)
         if match:
-#            print('Match Total L Mem')
+            print('Match Total L Mem')
             tmpline[3]=round(float((totalmem-float(match.group(1)))/totalmem*100),1)
             tmpline[5]=float(match.group(1))
             jsonline=tmpline.copy()
@@ -223,7 +229,7 @@ for line in origFile:
         match = re.match('^\s*(\d+)\s+root\s+(\d+)\s+(\d+)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+(\d+)\s+\w+\s+([0-9.]+)\s+([0-9.]+)\s+[0-9:.]+\s+([\w.-]+)',line)
         if match: 
             processName=match.group(9)
-#            print('Match ' + processName)
+            print('Match ' + processName)
             if not processCollected:
                 processNameList.append(processName)
             else:
@@ -256,7 +262,7 @@ for line in origFile:
         match = re.match('^[\w\d/]+\s+\d+\s+\d+\s+\d+\s+([0-9.]+)%\s+(\/.*)$',line)
         if match:
             mountPoint=match.group(2)
-#            print('Match storage:' + mountPoint)
+            print('Match storage:' + mountPoint)
             if mountPointCollected:
                 assert mountPoint in mountPointList
             else:
@@ -271,10 +277,12 @@ for line in origFile:
                 appendData(tmpline,mountPointData,mountPointList)
                 mountPointData.clear()
                 data.append(tmpline)
-#                print(tmpline)
+                print(tmpline)
                 assert len(tmpline) == len(title)
                 tmpline=[0,0,0,0,0,0]
                 state = State.INIT
+print(state)
+print(lineNum)
 assert(state==State.INIT)
 
 for row in data:
