@@ -1,4 +1,4 @@
 def Settings( **kwargs ):
     return {
-            'interpreter_path': '../pyvenv/study/bin/python'
-    }
+            'interpreter_path': '~/Workspace/pyvenv/study/bin/python'
+            }
