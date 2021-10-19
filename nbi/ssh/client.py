@@ -301,6 +301,7 @@ class SSHSession:
 
 if __name__ == "__main__":
     ssh_obj = SSHSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
+    ssh_obj.connect()
     output = ssh_obj.sendCmd_without_connection_retry(cmd="show inventory", delay=2)
     print(output)
 
