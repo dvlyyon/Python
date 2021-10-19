@@ -32,10 +32,9 @@ class SSHSession:
         self.enable = False
         self.config = False
         self.enable = False
+    
 
-        self.__connect_session()
-
-    def __connect_session(self):
+    def connect(self):
 
         try:
 
@@ -102,16 +101,17 @@ class SSHSession:
             while prompt_read<60: # After initial connection.. reading the output buffer and checking for prompt till 60 seconds. 60 sec considered as max timeout
                 output += self.read_output_buffer()
                 if self.check_for_prompt(output_response=output,prompt_list=self.initial_prompts):
-                    self.logger.info("Connected successfully to '%s' via SSH" % self.ip)
+                    self.logger.debug("Connected successfully to '%s' via SSH" % self.ip)
                     # logger.info(output)
-                    return
+                    return (True, f"Connected successfully to {self.ip} via SSH")
                 time.sleep(1)
                 prompt_read+=1
 
             self.logger.debug("Connected.. but Connection prompt {} not present in NE response : {} ".format(",".join(self.initial_prompts),output))
-
+            return (False, "Connected and Not get prompt in 1 minutes")
         except Exception as e:
-            raise Exception("SSH connection to '%s' failed:%s" % (self.ip, str(e)))
+            logger.exception(e)
+            return (False,"SSH connection to '%s' failed:%s" % (self.ip, str(e)))
 
 # ------------------------------------------------------------------------------------------------------------------
     def check_for_prompt(self, output_response: str, prompt_list: list, is_tl1: bool = False):
@@ -156,7 +156,7 @@ class SSHSession:
             if self.ssh.get_transport().is_active() == False:
                 self.logger.debug('Looks like NE connectivity went down.. Let me wait for 15 seconds and will try connecting back...')
                 time.sleep(15)
-                self.__connect_session()
+                self.connect()
 
             return True
 
@@ -187,6 +187,7 @@ class SSHSession:
                         time.sleep(1)
                     else:
                         self.logger.error("Paramiko send channel not ready")
+                        return (False, "Paramiko send channel not ready")
 
                 except Exception as e:
                     # Somekind of socket error
@@ -223,17 +224,17 @@ class SSHSession:
                     output = "\n".join(output.split(carriage_return)[1:])
                 # self.logger.debug('After Removing ANSIescapeSquence=%s' % output)
 
-                return output
+                return (True, output)
 
             else:
 
                 self.logger.debug('Session seems to be closed...')
 
-                return False
+                return (False, "Session seems to be closed")
 
         except Exception as exe:
             logger.warning(exe)
-            return ""
+            return (False, str(exe))
 
     def sendCmd_without_connection_retry(self, cmd, delay=2,prompt=None):
         """
@@ -247,7 +248,8 @@ class SSHSession:
                 self.shell.send('%s\n' % cmd)
                 time.sleep(delay)
             else:
-                self.logger.error("Paramiko send channel not ready")
+                self.logger.debug("Paramiko send channel not ready")
+                return (False, "Paramiko send channel not ready")
 
         except Exception as e:
             self.logger.debug(e)
@@ -276,9 +278,9 @@ class SSHSession:
                 time.sleep(1)
                 sleep_time += 1
 
-        self.logger.info('After Removing ANSIescapeSquence=%s' % output)
+        self.logger.debug('After Removing ANSIescapeSquence=%s' % output)
 
-        return output
+        return (True,output)
 
     def removeANSIescapeSequence(self, text):
         text = text.decode('utf-8', errors="ignore")
