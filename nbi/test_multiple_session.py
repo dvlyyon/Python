@@ -1,4 +1,5 @@
 import time
+import threading
 from threading import Thread
 import logging
 import datetime
@@ -23,88 +24,91 @@ class SessionTask:
 
 def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
     mythread = threading.current_thread();
-    mythread.stats={"fail":0, "succ":0}
+    mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     for i in range(iter_num):
         try:
             client = sclient.SSHSession(ip,user=user_name,passwd=passwd)
             result, reason = client.connect()
             if not result:
                 logger.error(f"CONNECT_ERROR:{reason}")
-                mythread["fail"] += 1
+                mythread.stats["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.info(read_oper.command)
+                        logger.critical(read_oper.command)
                         result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
-                        logger.info(output)
-                    mythread["succ"] += 1
+                        logger.critical(output)
+                    mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.info(write_oper.command)
+                        logger.critical(write_oper.command)
                         result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
-                    mythread["succ"] += 1
+                    mythread.stats["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
-            mythread["fail"] += 1
+            mythread.stats["fail"] += 1
+    mythread.stats["end_time"]=datetime.datetime.now()
 
 def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
     mythread = threading.current_thread();
-    mythread.stats={"fail":0, "succ":0}
+    mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     for i in range(iter_num):
         try:
             client = nclient.NetconfSession(ip,user=user_name,passwd=passwd)
             result, reason = client.connect()
             if not result:
                 logger.error(f"CONNECT_ERROR:{reason}")
-                mythread["fail"] += 1
+                mythread.stats["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.info(read_oper.command)
+                        logger.critical(read_oper.command)
                         result, output = client.get(xpath=read_oper.command)
-                        logger.info(output)
-                    mythread["succ"] += 1
+                        logger.critical(output)
+                    mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.info(write_oper.command)
+                        logger.critical(write_oper.command)
 #                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
-                    mythread["succ"] += 1
+                    mythread.stats["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
-            mythread["fail"] += 1
+            mythread.stats["fail"] += 1
+    mythread.stats["end_time"]=datetime.datetime.now()
 
 def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
     mythread = threading.current_thread();
-    mythread.stats={"fail":0, "succ":0}
+    mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     for i in range(iter_num):
         try:
             client = rclient.RestconfSession(ip,port,user_name,passwd)
             result, reason, info = client.connect()
             if result != 200 :
                 logger.error(f"CONNECT_ERROR:{result}-{reason}-{info}")
-                mythread["fail"] += 1
+                mythread.stats["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.info(read_oper.command)
+                        logger.critical(read_oper.command)
                         result, reason, output = client.get(url=read_oper.command)
-                        logger.info(output)
-                    mythread["succ"] += 1
+                        logger.critical(output)
+                    mythread.stats["succ"] += 1
                 if write_operations:
                     pass
                     # for write_oper in write_operations:
-                        # logger.info(write_oper.command)
+                        # logger.critical(write_oper.command)
                         # result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
-                    mythread["succ"] += 1
+                    mythread.stats["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
-            mythread["fail"] += 1
+            mythread.stats["fail"] += 1
+    mythread.stats["end_time"]=datetime.datetime.now()
 
 def test_parallel_sessions(tasks: list):
     session_threads = []
@@ -118,6 +122,7 @@ def test_parallel_sessions(tasks: list):
             session_id += 1
 
     logger.critical(datetime.datetime.now())
+    start_time = datetime.datetime.now()
     for sess_th in session_threads:
         sess_th.start()
 
@@ -125,10 +130,16 @@ def test_parallel_sessions(tasks: list):
 
     for sess_th in session_threads:
         sess_th.join()
-    logger.critical(datetime.datetime.now())
+
+    for sess_th in session_threads:
+        logger.critical("{} - Failed:{} - Success:{} - Start:{} - End:{}".format(sess_th.stats["name"],
+                        sess_th.stats["fail"], sess_th.stats["succ"], 
+                        sess_th.stats["start_time"], sess_th.stats["end_time"]))
+    end_time = datetime.datetime.now()
+    logger.critical("Start:{} --- End:{}".format(start_time,end_time))
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, 
+    logging.basicConfig(level=logging.ERROR, 
             format='%(asctime)s - %(threadName)s - %(levelname)s -  %(message)s',
             datefmt='%m-%d %H:%M',
             filename='myapp.log',
@@ -136,9 +147,9 @@ if __name__ == "__main__":
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.DEBUG)
     # logger.addHandler(ch)
-    method_para1 = (1000, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None)
-    method_para2 = (1000, '172.29.202.84', 22, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None)
-    method_para3 = (1000, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card")], None)
+    method_para1 = (10, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None)
+    method_para2 = (10, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None)
+    method_para3 = (10, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card")], None)
     # method_para4 = (10, '172.29.202.84', 22, 'admin3', 'e2e!Net4u#', [Command("show card-1-5")], None)
     # method_para5 = (10, '172.29.202.84', 22, 'admin4', 'e2e!Net4u#', [Command("show card-1-5")], None)
     test_parallel_sessions([

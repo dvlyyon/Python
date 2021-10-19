@@ -263,18 +263,18 @@ class SSHSession:
         sleep_time = 0
         while sleep_time < delay:
             if self.shell.recv_ready():
-                print("reading data from socket..!")
+                logger.debug("reading data from socket..!")
                 bufferLen = len(self.shell.in_buffer)  # Paramiko buffer
                 response = self.shell.recv(bufferLen)
                 # logger.info("####response=%s" % response)
                 output = output + self.removeANSIescapeSequence(response)
                 if self.check_for_prompt(output_response=output, prompt_list=prompt):
-                    logger.info("Received output till the prompt given..!! command completed successfully..!!")
+                    logger.debug("Received output till the prompt given..!! command completed successfully..!!")
                     break
                 time.sleep(1)
                 sleep_time += 1
             else:
-                print("socket not ready.. wait for 1 sec")
+                logger.debug("socket not ready.. wait for 1 sec")
                 time.sleep(1)
                 sleep_time += 1
 
