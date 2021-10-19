@@ -22,71 +22,89 @@ class SessionTask:
         self.method_parameters = method_parameters
 
 def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    mythread = threading.current_thread();
+    mythread.stats={"fail":0, "succ":0}
     for i in range(iter_num):
         try:
             client = sclient.SSHSession(ip,user=user_name,passwd=passwd)
             result, reason = client.connect()
             if not result:
                 logger.error(f"CONNECT_ERROR:{reason}")
+                mythread["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
                         logger.info(read_oper.command)
                         result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
                         logger.info(output)
+                    mythread["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
                         logger.info(write_oper.command)
                         result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                    mythread["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
+            mythread["fail"] += 1
 
 def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    mythread = threading.current_thread();
+    mythread.stats={"fail":0, "succ":0}
     for i in range(iter_num):
         try:
             client = nclient.NetconfSession(ip,user=user_name,passwd=passwd)
             result, reason = client.connect()
             if not result:
                 logger.error(f"CONNECT_ERROR:{reason}")
+                mythread["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
                         logger.info(read_oper.command)
                         result, output = client.get(xpath=read_oper.command)
                         logger.info(output)
+                    mythread["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
                         logger.info(write_oper.command)
 #                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                    mythread["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
+            mythread["fail"] += 1
 
 def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    mythread = threading.current_thread();
+    mythread.stats={"fail":0, "succ":0}
     for i in range(iter_num):
         try:
             client = rclient.RestconfSession(ip,port,user_name,passwd)
             result, reason, info = client.connect()
             if result != 200 :
                 logger.error(f"CONNECT_ERROR:{result}-{reason}-{info}")
+                mythread["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
                         logger.info(read_oper.command)
                         result, reason, output = client.get(url=read_oper.command)
                         logger.info(output)
+                    mythread["succ"] += 1
                 if write_operations:
                     pass
                     # for write_oper in write_operations:
                         # logger.info(write_oper.command)
                         # result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                    mythread["succ"] += 1
             client.close()
         except Exception as e:
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
+            mythread["fail"] += 1
 
 def test_parallel_sessions(tasks: list):
     session_threads = []
