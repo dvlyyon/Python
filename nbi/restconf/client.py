@@ -32,7 +32,7 @@ class RestconfSession():
         status = response.status
         reason = response.reason
         data = response.read().decode('utf-8')
-        return (status, data, data)
+        return (status, reason, data)
 
     def get(self,url):
         self.conn.request("GET",f"{self.root_url}/data/{url}", headers={**self.get_json_header, **self.auth})
@@ -45,7 +45,7 @@ class RestconfSession():
         self.conn = None
 
 if __name__ == '__main__':
-    sess = RestconfSession("10.13.16.24",8181,"administrator","e2e!Net4u#")
+    sess = RestconfSession("172.29.202.84",8181,"administrator","e2e!Net4u#")
     print(sess.connect())
     s, r, d = sess.get("ioa-network-element:ne/equipment/card")
     print(d)
