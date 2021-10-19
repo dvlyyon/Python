@@ -43,6 +43,49 @@ def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, wr
             logger.debug(e)
             logger.error(f"Error:{str(e)}")
 
+def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    for i in range(iter_num):
+        try:
+            client = nclient.NetconfSession(ip,user=user_name,passwd=passwd)
+            result, reason = client.connect()
+            if not result:
+                logger.error(f"CONNECT_ERROR:{reason}")
+            else:
+                if read_operations:
+                    for read_oper in read_operations:
+                        logger.info(read_oper.command)
+                        result, output = client.get(xpath=read_oper.command)
+                        logger.info(output)
+                if write_operations:
+                    for write_oper in write_operations:
+                        logger.info(write_oper.command)
+#                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+            client.close()
+        except Exception as e:
+            logger.debug(e)
+            logger.error(f"Error:{str(e)}")
+
+def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    for i in range(iter_num):
+        try:
+            client = sclient.SSHSession(ip,user=user_name,passwd=passwd)
+            result, reason = client.connect()
+            if not result:
+                logger.error(f"CONNECT_ERROR:{reason}")
+            else:
+                if read_operations:
+                    for read_oper in read_operations:
+                        logger.info(read_oper.command)
+                        result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
+                        logger.info(output)
+                if write_operations:
+                    for write_oper in write_operations:
+                        logger.info(write_oper.command)
+                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+            client.close()
+        except Exception as e:
+            logger.debug(e)
+            logger.error(f"Error:{str(e)}")
 
 def test_parallel_sessions(tasks: list):
     session_threads = []
@@ -74,13 +117,14 @@ if __name__ == "__main__":
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.DEBUG)
     # logger.addHandler(ch)
-    method_para1 = (10, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None)
-    # method_para2 = (10, '172.29.202.84', 22, 'admin1', 'e2e!Net4u#', [Command("show card-1-5")], None)
+    #method_para1 = (10, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None)
+    method_para2 = (10, '172.29.202.84', 22, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None)
     # method_para3 = (10, '172.29.202.84', 22, 'admin2', 'e2e!Net4u#', [Command("show card-1-5")], None)
     # method_para4 = (10, '172.29.202.84', 22, 'admin3', 'e2e!Net4u#', [Command("show card-1-5")], None)
     # method_para5 = (10, '172.29.202.84', 22, 'admin4', 'e2e!Net4u#', [Command("show card-1-5")], None)
-    test_parallel_sessions([SessionTask('CLI', 20, cli_session_thread, method_para1),
-                            # SessionTask('CLI', 20, cli_session_thread, method_para2),
+    test_parallel_sessions([
+                            # SessionTask('CLI', 20, cli_session_thread, method_para1),
+                            SessionTask('NETCONF', 20, netconf_session_thread, method_para2),
                             # SessionTask('CLI', 20, cli_session_thread, method_para3),
                             # SessionTask('CLI', 20, cli_session_thread, method_para4),
                             # SessionTask('CLI', 20, cli_session_thread, method_para5),

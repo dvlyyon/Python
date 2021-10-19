@@ -29,24 +29,27 @@ class NetconfSession:
         USER = self.user
         PASS = self.passwd
         PORT = port
-        self.__connect()
 
 
-    def __connect(self, timeout=100, hostkey_verify=False):
-
-        self.establishConnection = manager.connect(host=self.ip, port=self.port, username=self.user,
-                                                   password=self.passwd, timeout=self.timeout, hostkey_verify=False,
-                                                   **self.kwargs)
+    def connect(self, timeout=100, hostkey_verify=False):
 
         try:
+            self.establishConnection = manager.connect(host=self.ip, port=self.port, username=self.user,
+                                                       password=self.passwd, timeout=self.timeout, hostkey_verify=False,
+                                                       **self.kwargs)
+            try:
 
-            self.establishConnection._session.transport.set_keepalive(interval=1)
+                self.establishConnection._session.transport.set_keepalive(interval=1)
 
-        except:
+            except:
+                logger.debug(e)
+                logger.warning("Session Disconnected.. Keep alive expires..!!")
+            return (True, "Connected")
+        except Exception as e:
+            logger.debug(e)
+            return (False,str(e))
 
-            logger.warning("Session Disconnected.. Keep alive expires..!!")
-
-    def __check_connectivity(self):
+    def check_connectivity(self):
 
         try:
 
@@ -56,7 +59,7 @@ class NetconfSession:
 
                 time.sleep(10)
 
-                self.__connect()
+                self.connect()
 
         except Exception as e:
 
@@ -78,11 +81,13 @@ class NetconfSession:
 
         try:
 
-            self.__check_connectivity()
+            self.check_connectivity()
 
             logger.debug(inputQuery)
 
             output = self.establishConnection.get((inputType, inputQuery), with_defaults=with_defaults).data_xml
+
+            return (True, output)
 
         except RPCError as exception:
 
@@ -94,11 +99,10 @@ class NetconfSession:
             logger.debug("Exception Occured %s", e)
             output = e
 
-        return output
+        return (False, str(output))
 
 
-
-    def close_session(self):
+    def close(self):
 
         output = None
 
@@ -108,11 +112,11 @@ class NetconfSession:
                 output = self.establishConnection.close_session()
 
         except RPCError as exception:
-            logger.debug("RPC Error Occured %s", exception)
+            logger.debug("RPC Error Occured when close session: %s", exception)
             output = exception
 
         except Exception as exception:
-            logger.debug("Exception Occured....")
+            logger.debug("Exception Occured when close session: ....")
             logger.debug(exception)
             output = exception
 
@@ -121,6 +125,7 @@ class NetconfSession:
 
 if __name__ == "__main__":
     netconf_obj = NetconfSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
-    output = netconf_obj.get(xpath="/ne/ne-name")
-    netconf_obj.close_session()
+    netconf_obj.connect()
+    output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
+    netconf_obj.close()
     print(output)
