@@ -197,7 +197,7 @@ for line in origFile:
         tmpline[0]=date
         state = State.T_CPU
     elif state == State.T_CPU:
-        match = re.match('^%Cpu\(s\):\s+.*([0-9.]+)\s+id,.*st$',line)
+        match = re.match('^%Cpu\(s\):\s+.*,\s*([0-9.]+)\s+id,.*st$',line)
         if match:
 #            print('Match Total CPU')
             tmpline[1]=round(float(100-float(match.group(1))),1)
