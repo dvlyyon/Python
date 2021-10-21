@@ -23,16 +23,19 @@ class SessionTask:
         self.thread_method = thread_method
         self.method_parameters = method_parameters
 
-def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
+    client = None
+    connected = True
     for i in range(iter_num):
         try:
-            client = sclient.SSHSession(ip,user=user_name,passwd=passwd)
-            result, reason = client.connect()
-            if not result:
-                logger.error(f"CONNECT_ERROR:{reason}")
-                mythread.stats["fail"] += 1
+            if not client:
+                client = sclient.SSHSession(ip,user=user_name,passwd=passwd)
+                result, reason = client.connect()
+                if not result:
+                    logger.error(f"CONNECT_ERROR:{reason}")
+                    mythread.stats["fail"] += 1
             else:
                 if read_operations:
                     for read_oper in read_operations:
@@ -154,11 +157,11 @@ if __name__ == "__main__":
     # logger.addHandler(ch)
     method_para1 = (10, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None)
     method_para2 = (10, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None)
-    method_para3 = (10, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/ne-name")], None)
+    method_para3 = (10, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None)
     # method_para4 = (10, '172.29.202.84', 22, 'admin3', 'e2e!Net4u#', [Command("show card-1-5")], None)
     # method_para5 = (10, '172.29.202.84', 22, 'admin4', 'e2e!Net4u#', [Command("show card-1-5")], None)
     test_parallel_sessions([
-#                            SessionTask('CLI', 30, cli_session_thread, method_para1),
+                            SessionTask('CLI', 30, cli_session_thread, method_para1),
                             SessionTask('NETCONF', 40, netconf_session_thread, method_para2),
                             SessionTask('RESTCONF', 30, restconf_session_thread, method_para3),
                             # SessionTask('CLI', 20, cli_session_thread, method_para4),
