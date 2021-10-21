@@ -89,7 +89,7 @@ class SSHSession:
             self.shell.keep_this = self.ssh
 
             try:
-                self.ssh.get_transport().set_keepalive(interval=1)
+                self.ssh.get_transport().set_keepalive(interval=120)
 
             except Exception as e:
                 self.logger.warning("Session Disconnected.. Keep alive expires..!!")

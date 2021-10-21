@@ -47,7 +47,7 @@ class RestconfSession():
 if __name__ == '__main__':
     sess = RestconfSession("172.29.202.84",8181,"administrator","e2e!Net4u#")
     print(sess.connect())
-    s, r, d = sess.get("ioa-network-element:ne/equipment/card[name='1-5']")
+    s, r, d = sess.get("ioa-network-element:ne/equipment/card=1-5?depth=2")
     print(d)
 # username="administrator"
 # password="e2e!Net4u#"
