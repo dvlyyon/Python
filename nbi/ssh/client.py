@@ -59,7 +59,7 @@ class SSHSession:
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             try:
-                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False)
+                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False, banner_timeout=300, auth_timeout=120)
                 # self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
                                  # pkey               =   self.kwargs.get("pkey",None),
                                  # key_filename       =   self.kwargs.get("key_filename",None),
