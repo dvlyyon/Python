@@ -7,7 +7,7 @@ def test_maxiumn_session():
     try:
         for i in range(6):
             for j in range(200):
-                session = RestconfSession('172.29.202.84','8181',f"admin{i}","e2e!Net4u#")
+                session = RestconfSession('172.29.202.82','8181',f"admin{i}","e2e!Net4u#")
                 s, r, d = session.connect()
                 print (f"No.:{i}.{j} Status:{s} Reason:{r} Data:{d}")
                 sessions.append(session)

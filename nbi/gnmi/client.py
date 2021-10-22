@@ -77,7 +77,7 @@ if __name__ == "__main__":
     print(output)
     output = client.subscribe(1,[{GnmiSubscriptionKey.PATH : '/ne/ne-name', 
                               GnmiSubscribeKey.MODE : GnmiStreamMode.SAMPLE}],
-                              GnmiSubscribeMode.STREAM,encoding=GnmiSubscribeEncoding.JSON_IETF,
+                              GnmiSubscribeMode.ONCE,encoding=GnmiSubscribeEncoding.JSON_IETF,
                               )
     time.sleep(10)    
     output = client.telemetry_data(1)

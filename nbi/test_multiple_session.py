@@ -65,7 +65,7 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
     for i in range(iter_num):
         try:
             if not client:
-                client = nclient.NetconfSession(ip,user=user_name,passwd=passwd)
+                client = nclient.NetconfSession(ip,user=user_name,passwd=passwd,timeout=120)
                 connected, reason = client.connect()
                 if not connected:
                     logger.error(f"CONNECT_ERROR:{reason}")
@@ -168,6 +168,7 @@ if __name__ == "__main__":
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.DEBUG)
     # logger.addHandler(ch)
+    # method_para1 = (10, '172.29.14.151', 22, 'dci', 'Dci4523', [Command("ls")], None, True)
     method_para1 = (1100, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None, True)
     method_para2 = (1100, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
     method_para3 = (1100, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
@@ -179,6 +180,6 @@ if __name__ == "__main__":
                             SessionTask('RESTCONF', 30, restconf_session_thread, method_para3),
                             # SessionTask('CLI', 20, cli_session_thread, method_para4),
                             # SessionTask('CLI', 20, cli_session_thread, method_para5),
-        ],5)
+        ],0)
 
 

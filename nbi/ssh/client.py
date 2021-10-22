@@ -59,7 +59,7 @@ class SSHSession:
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             try:
-                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False, banner_timeout=300, auth_timeout=120)
+                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False, banner_timeout=400, auth_timeout=300)
                 # self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
                                  # pkey               =   self.kwargs.get("pkey",None),
                                  # key_filename       =   self.kwargs.get("key_filename",None),
@@ -300,8 +300,10 @@ class SSHSession:
             self.ssh.close()
 
 if __name__ == "__main__":
-    ssh_obj = SSHSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
+    #ssh_obj = SSHSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
+    ssh_obj = SSHSession(ip='172.29.22.165',user='dci',passwd='Dci4523')
     ssh_obj.connect()
-    output = ssh_obj.sendCmd_without_connection_retry(cmd="show inventory", delay=2)
+    output = ssh_obj.sendCmd_without_connection_retry(cmd="ls", delay=2)
+    ssh_obj.close()
     print(output)
 
