@@ -29,6 +29,7 @@ class NetconfSession:
         USER = self.user
         PASS = self.passwd
         PORT = port
+        print("to connect")
 
 
     def connect(self, timeout=100, hostkey_verify=False):
@@ -46,7 +47,7 @@ class NetconfSession:
                 logger.warning("Session Disconnected.. Keep alive expires..!!")
             return (True, "Connected")
         except Exception as e:
-            logger.debug(e)
+            logger.exception(e)
             return (False,str(e))
 
     def check_connectivity(self):
