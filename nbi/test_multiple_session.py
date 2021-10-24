@@ -205,6 +205,6 @@ if __name__ == "__main__":
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para4),
                             SessionTask('CLI', 10, cli_session_thread, method_para5),
                             SessionTask('RESTCONF', 9, restconf_session_thread, method_para6),
-        ],3,120)
+        ],3,3600*12)
 
 
