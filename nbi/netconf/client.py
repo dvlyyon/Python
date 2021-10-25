@@ -29,7 +29,6 @@ class NetconfSession:
         USER = self.user
         PASS = self.passwd
         PORT = port
-        print("to connect")
 
 
     def connect(self, timeout=100, hostkey_verify=False):
@@ -43,11 +42,11 @@ class NetconfSession:
                 self.establishConnection._session.transport.set_keepalive(interval=1)
 
             except:
-                logger.debug(e)
+                logger.exception(e)
                 logger.warning("Session Disconnected.. Keep alive expires..!!")
             return (True, "Connected")
         except Exception as e:
-            logger.exception(e)
+            logger.debug(e)
             return (False,str(e))
 
     def check_connectivity(self):
@@ -102,6 +101,37 @@ class NetconfSession:
 
         return (False, str(output))
 
+    def edit_config(self, config, dataStore, default_operation=None, test_option=None, error_option=None):
+
+        if config == None:
+            return f"Please provide config parameter!!!"
+
+        editConfig = config 
+        result = True
+        output = None
+
+        try:
+
+            self.check_connectivity()
+            logger.debug(editConfig)
+            output = self.establishConnection.edit_config(target=dataStore,
+                                                          config=editConfig,
+                                                          default_operation=default_operation,
+                                                          test_option=test_option,
+                                                          error_option=error_option)
+        except RPCError as exception:
+
+            logger.exception(exception)
+            output = exception
+            result = False
+
+        except Exception as e:
+
+            logger.exception("Exception Occured %s", e)
+            output = e
+            result = False
+
+        return (result, str(output))
 
     def close(self):
 
@@ -128,5 +158,11 @@ if __name__ == "__main__":
     netconf_obj = NetconfSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
     netconf_obj.connect()
     output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
-    netconf_obj.close()
     print(output)
+    print(netconf_obj.edit_config(config="""
+    <config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<ne xmlns="http://infinera.com/yang/ioa/ne" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+  <label>Changed by Netconf</label>
+</ne>
+</config>""", dataStore="running"))
+    netconf_obj.close()

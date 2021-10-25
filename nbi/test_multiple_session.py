@@ -146,7 +146,7 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
-def test_parallel_sessions(tasks: list, delay=0, howlong=3600):
+def test_parallel_sessions(tasks: list, delay=0, howlong=None):
     session_threads = []
     session_id = 1
     for task in tasks:
@@ -159,17 +159,24 @@ def test_parallel_sessions(tasks: list, delay=0, howlong=3600):
 
     logger.critical(datetime.datetime.now())
     start_time = datetime.datetime.now()
+
     for sess_th in session_threads:
         sess_th.start()
         time.sleep(delay)
 
-    time.sleep(howlong)
+    if not howlong:
+        howlong = 365*24*3600
 
+    time0 = time.time()
     for sess_th in session_threads:
-        sess_th.mystop = True
-
-    for sess_th in session_threads:
-        sess_th.join()
+        if time.time() - time0 > howlong:
+            sess_th.mystop = True
+            sess_th.join()
+        else:
+            sess_th.join(howlong-time.time()+time0)
+            sess_th.mystop = True
+            if not sess_th.stats.get("end_time"):
+                sess_th.stats["end_time"]=datetime.datetime.now()
 
     for sess_th in session_threads:
         logger.critical("{} - Failed:{} - Success:{} - Start:{} - End:{}".format(sess_th.stats["name"],

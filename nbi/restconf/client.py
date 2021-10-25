@@ -1,6 +1,7 @@
 import http.client as httpclient
 import ssl
 from base64 import b64encode
+import requests
 
 class RestconfSession():
 
@@ -13,6 +14,7 @@ class RestconfSession():
         self.root_header = {"Accept": "application/xrd+xml"}
         self.get_xml_header = {"Accept" : "application/yang-data+xml"}
         self.get_json_header = {"Accept" : "application/yang-data+json"}
+        self.json_content = {"Content-Type" : "application/yang-data+json"}
         self.conn = None
 
     def connect(self):
@@ -39,16 +41,55 @@ class RestconfSession():
         response = self.conn.getresponse()
         return self._parseresponse(response)
 
+    def patch(self,url,body):
+        self.conn.request("PATCH",f"{self.root_url}/data/{url}",
+                          headers={**self.get_json_header, **self.json_content, **self.auth},
+                          body=body)
+        response = self.conn.getresponse()
+        return self._parseresponse(response)
+
     def close(self):
         if self.conn:
             self.conn.close()
         self.conn = None
 
+class RestconfCookieSession:
+    def __init__(self, host, port, username, password):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.conn = requests.Session()
+        self.baseurl = f"https://{host}:{port}"
+        self.dataurl = f"{self.baseurl}/restconf/data"
+    def login(self):
+        self.conn.verify = False
+        res=self.conn.post(f"{self.baseurl}/login", json={'username': self.username, 'password': self.password}, verify=False)
+        return self._parseresponse(res)
+
+    def get(self, url):
+        res = self.conn.get(f"{self.dataurl}/{url}")
+        return self._parseresponse(res)
+
+    def patch(self,url,json):
+        res = self.conn.patch(url=f"{self.dataurl}/{url}",json=json)
+        return self._parseresponse(res)
+
+    def _parseresponse(self,response):
+        status = response.status_code
+        reason = response.reason
+        data = response.text
+        return (status, reason, data)
+
+    def logout(self):
+        self.conn.post(f"{self.baseurl}/logout")
+
 if __name__ == '__main__':
-    sess = RestconfSession("172.29.202.84",8181,"administrator","e2e!Net4u#")
-    print(sess.connect())
-    s, r, d = sess.get("ioa-network-element:ne/equipment/card=1-5?depth=2")
-    print(d)
+#    sess = RestconfSession("172.29.202.84",8181,"administrator","e2e!Net4u#")
+#    print(sess.connect())
+#    s, r, d = sess.get("ioa-network-element:ne/equipment/card[name='1-5']")
+#    print(d)
+
 # username="administrator"
 # password="e2e!Net4u#"
 # credential = b64encode(f"{username}:{password}".encode('utf-8')).decode("ascii")
@@ -63,4 +104,11 @@ if __name__ == '__main__':
 # status = res.status
 # reason = res.reason
 # data = res.read()
-# print(data.decode('utf-8')) 
+# print(data.decode('utf-8'))
+
+    session = RestconfSession('172.29.202.83',8181,'dwu','Infinera@1')
+    session.connect()
+    url="ioa-network-element:ne/equipment/card=1-5"
+    payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'
+    result, reason, output = session.patch(url,body=payload)
+    print(result)
