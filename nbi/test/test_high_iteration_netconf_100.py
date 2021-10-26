@@ -6,11 +6,16 @@ from nbi.test_multiple_session import *
 logger = logging.getLogger(__name__)
 
 def main():
-    method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para2 = (1000, '172.29.202.84', 830, 'admin2', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para3 = (1000, '172.29.202.84', 830, 'admin3', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para4 = (1000, '172.29.202.84', 830, 'admin4', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para5 = (1000, '172.29.202.84', 830, 'admin5', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
+    method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+                    None, True, True)
+    method_para2 = (1000, '172.29.202.84', 830, 'admin2', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+                    None, True,True)
+    method_para3 = (1000, '172.29.202.84', 830, 'admin3', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+                    None, True,True)
+    method_para4 = (1000, '172.29.202.84', 830, 'admin4', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+                    None, True,True)
+    method_para5 = (1000, '172.29.202.84', 830, 'admin5', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+                    None, True, True)
 
     test_parallel_sessions([
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para1),
@@ -18,7 +23,7 @@ def main():
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para3),
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para4),
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para5)
-        ],3,360)
+        ],3,12*3600)
 
 
 if __name__ == "__main__":

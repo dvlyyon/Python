@@ -24,7 +24,7 @@ class SessionTask:
         self.thread_method = thread_method
         self.method_parameters = method_parameters
 
-def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
+def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close=True, fail_to_retry=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -58,13 +58,13 @@ def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, wr
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if to_delay and not connected:
+        if fail_to_retry and not connected:
             time.sleep(random.randrange(6))
         else:
             i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
-def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
+def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close=True, fail_to_retry=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -98,13 +98,13 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if to_delay and not connected:
+        if fail_to_retry and not connected:
             time.sleep(random.randrange(6))
         else:
             i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
-def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
+def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close=True, fail_to_retry=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -142,7 +142,7 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if not connected and to_delay
+        if not connected and fail_to_retry:
             time.sleep(random.randrange(6))
         else:
             i += 1
