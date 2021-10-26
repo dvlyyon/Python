@@ -1,7 +1,6 @@
 import http.client as httpclient
 import ssl
 from base64 import b64encode
-import requests
 
 class RestconfSession():
 
@@ -54,6 +53,7 @@ class RestconfSession():
         self.conn = None
 
 class RestconfCookieSession:
+    import requests
     def __init__(self, host, port, username, password):
         self.host = host
         self.port = port

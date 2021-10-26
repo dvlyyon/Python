@@ -18,7 +18,7 @@ def main():
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para3),
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para4),
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para5)
-        ],3,3600*12)
+        ],3,360)
 
 
 if __name__ == "__main__":

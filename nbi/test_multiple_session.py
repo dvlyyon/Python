@@ -24,7 +24,7 @@ class SessionTask:
         self.thread_method = thread_method
         self.method_parameters = method_parameters
 
-def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close):
+def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -58,13 +58,13 @@ def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, wr
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if connected: 
-            i += 1
-        else:
+        if to_delay and not connected:
             time.sleep(random.randrange(6))
+        else:
+            i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
-def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close):
+def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -98,13 +98,13 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if connected:
-            i += 1
-        else:
+        if to_delay and not connected:
             time.sleep(random.randrange(6))
+        else:
+            i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
-def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close):
+def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close, to_delay=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -142,7 +142,9 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
-        if connected:
+        if not connected and to_delay
+            time.sleep(random.randrange(6))
+        else:
             i += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
@@ -166,17 +168,18 @@ def test_parallel_sessions(tasks: list, delay=0, howlong=None):
 
     if not howlong:
         howlong = 365*24*3600
+    logger.critical(f"HOWLONG: {howlong}")
 
     time0 = time.time()
     for sess_th in session_threads:
-        if time.time() - time0 > howlong:
-            sess_th.mystop = True
-            sess_th.join()
-        else:
-            sess_th.join(howlong-time.time()+time0)
-            sess_th.mystop = True
-            if not sess_th.stats.get("end_time"):
-                sess_th.stats["end_time"]=datetime.datetime.now()
+        time1 = time.time()
+        if time1 - time0 < howlong:
+            logger.critical(f"join thread {sess_th.getName()} for {howlong-time1+time0} seconds")
+            sess_th.join(howlong-time1+time0)
+        logger.critical(f"join thread {sess_th.getName()} for stop")
+        sess_th.mystop = True
+        sess_th.join()
+            
 
     for sess_th in session_threads:
         logger.critical("{} - Failed:{} - Success:{} - Start:{} - End:{}".format(sess_th.stats["name"],
@@ -212,6 +215,6 @@ if __name__ == "__main__":
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para4),
                             SessionTask('CLI', 10, cli_session_thread, method_para5),
                             SessionTask('RESTCONF', 9, restconf_session_thread, method_para6),
-        ],3,3600*12)
+        ],3,360)
 
 
