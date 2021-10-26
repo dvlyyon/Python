@@ -13,9 +13,10 @@ import nbi.ssh.client as sclient
 logger = logging.getLogger(__name__)
 
 class Command:
-    def __init__(self,command, verify=None):
+    def __init__(self,command, verify=None, kwargs={}):
         self.command = command
         self.verify = verify
+        self.kwargs = kwargs
 
 class SessionTask:
     def __init__(self, interface_type, session_number, thread_method, method_parameters):
@@ -89,7 +90,12 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
                 if write_operations:
                     for write_oper in write_operations:
                         logger.critical(write_oper.command)
-#                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                        result, output = client.edit_config(config=write_oper.command,
+                                dataStore="running" if ( not write_oper.kwargs or not write_oper.kwargs.get("target")) 
+                                else write_oper.kwargs["target"])
+                        logger.critical(output)
+                    mythread.stats["succ"] += 1
+                if not read_operations and not write_operations:
                     mythread.stats["succ"] += 1
             if to_close or not connected:
                 client.close()
@@ -127,13 +133,14 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
                     for read_oper in read_operations:
                         logger.critical(f" [{i}] -- {read_oper.command}")
                         result, reason, output = client.get(url=read_oper.command)
-                        logger.critical(f" [{i}] -- {output}")
+                        logger.critical(f" [{i}] [R] -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
-                    pass
-                    # for write_oper in write_operations:
-                        # logger.critical(write_oper.command)
-                        # result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                    for write_oper in write_operations:
+                        logger.critical(write_oper.command)
+                        result, reason, output = client.patch(url=write_oper.command,
+                                body=write_oper.kwargs["payload"])
+                        logger.critical(f" [{i}] [W] -- {result} -- {reason}")
                     mythread.stats["succ"] += 1
             if to_close or not connected:
                 client.close()
@@ -146,6 +153,39 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             time.sleep(random.randrange(6))
         else:
             i += 1
+    mythread.stats["end_time"]=datetime.datetime.now()
+
+def restconf_cookie_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations):
+    """
+        Restconf for cookies
+        write_operations support patch update operation only, now
+    """
+    mythread = threading.current_thread();
+    mythread.stats = {"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
+    for i in range(iter_num):
+        try:
+            client = rclient.RestconfCookieSession(ip,port,user_name,passwd)
+            result, reason, info = client.login()
+            if result != 204:
+                logger.error(f"CONNECT_ERROR:{result}-{reason}-{info}")
+                mythread.stats["fail"] += 1
+            else:
+                if read_operations:
+                    for read_oper in read_operations:
+                        # logger.critical(read_oper.command)
+                        result, reason, output = client.get(url=read_oper.command)
+                        logger.critical("result %s, iter_num read %s" % (result, i))
+                    mythread.stats["succ"] += 1
+                if write_operations:
+                    for write_oper in write_operations:
+                        result, reason, output = client.patch(url=write_oper.command,json=write_oper.kwargs.get('payload'))
+                        logger.critical("result %s, iter_num write %s" % (result, i))
+                    mythread.stats["succ"] += 1
+            client.logout()
+        except Exception as e:
+            logger.debug(e)
+            logger.error(f"Error:{str(e)}")
+            mythread.stats["fail"] += 1
     mythread.stats["end_time"]=datetime.datetime.now()
 
 def test_parallel_sessions(tasks: list, delay=0, howlong=None):
@@ -167,7 +207,7 @@ def test_parallel_sessions(tasks: list, delay=0, howlong=None):
         time.sleep(delay)
 
     if not howlong:
-        howlong = 365*24*3600
+        howlong = 30*24*3600
     logger.critical(f"HOWLONG: {howlong}")
 
     time0 = time.time()
