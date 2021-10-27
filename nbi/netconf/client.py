@@ -82,9 +82,7 @@ class NetconfSession:
         try:
 
             self.check_connectivity()
-
             logger.debug(inputQuery)
-
             output = self.establishConnection.get((inputType, inputQuery), with_defaults=with_defaults).data_xml
 
             return (True, output)
@@ -133,6 +131,23 @@ class NetconfSession:
 
         return (result, str(output))
 
+    def call_rpc(self, rpc_content ):
+
+        output = None
+
+        try:
+
+            if rpc_content == None: 
+                return  (False, "PLEASE provide rpc conntect with parameter rpc_content")
+            self.check_connectivity()
+            output = self.establishConnection.dispatch(rpc_command=xml_.to_ele(rpc_content))
+            return (True, output)                                                                                                  
+
+        except RPCError as exception:                                                                        
+
+            logger.exception(exception)           
+            return (False, str(exception))                                                                           
+
     def close(self):
 
         output = None
@@ -160,9 +175,14 @@ if __name__ == "__main__":
     output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
     print(output)
     print(netconf_obj.edit_config(config="""
-    <config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-<ne xmlns="http://infinera.com/yang/ioa/ne" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
-  <label>Changed by Netconf</label>
-</ne>
-</config>""", dataStore="running"))
+        <config xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <ne xmlns="http://infinera.com/yang/ioa/ne" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+                <label>Changed by Netconf</label>
+            </ne>
+        </config>""", dataStore="running"))
+    print(netconf_obj.call_rpc("""
+        <get-pm xmlns="http://infinera.com/yang/ioa/pm" xmlns:xc="urn:ietf:params:xml:ns:netconf:base:1.0">
+            <data-type>real-time</data-type>
+        </get-pm>"""))
+    print(netconf_obj.get(xpath="/alarms/current-alarms"))
     netconf_obj.close()

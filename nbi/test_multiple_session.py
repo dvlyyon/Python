@@ -18,6 +18,25 @@ class Command:
         self.verify = verify
         self.kwargs = kwargs
 
+    def getExecuteTimes(self):
+        if not self.kwargs or not self.kwargs.get("repeat"):
+            return 1
+        else:
+            return int(self.kwargs["repeat"])
+
+    def getCommandType(self):
+        if not self.kwargs or not self.kwargs.get("type"):
+            return None
+        else:
+            return self.kwargs["type"]
+
+    def getArgument(self, arg):
+        if not self.kwargs or not self.kwargs.get(arg):
+            return None
+        else:
+            return self.kwargs[arg]
+
+
 class SessionTask:
     def __init__(self, interface_type, session_number, thread_method, method_parameters):
         self.interface_type = interface_type
@@ -25,7 +44,9 @@ class SessionTask:
         self.thread_method = thread_method
         self.method_parameters = method_parameters
 
-def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, write_operations, to_close=True, fail_to_retry=False):
+def cli_session_thread(iter_num,ip, port, user_name, passwd, 
+        read_operations, write_operations, 
+        to_close=True, fail_to_retry=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -43,22 +64,28 @@ def cli_session_thread(iter_num,ip, port, user_name, passwd, read_operations, wr
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] -- {read_oper.command}")
-                        result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
-                        logger.critical(f" [{i}] -- {output}")
+                        logger.critical(f" [{i}] [R]-- {read_oper.command}")
+                        for times in range(read_oper.getExecuteTimes()):
+                            result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
+                        logger.critical(f" [{i}] [R] -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.critical(write_oper.command)
-                        result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                        logger.critical(f" [{i}] [W] -- {write_oper.command}")
+                        for times in range(write_oper.getExecuteTimes()):
+                            result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
+                        logger.critical(f" [{i}] [W] -- {output}")
                     mythread.stats["succ"] += 1
             if to_close or not connected:
                 client.close()
                 client = None
         except Exception as e:
             logger.exception(e)
-            logger.critical(f"Error:{str(e)}")
+            logger.critical(f" [{i}] -- EXCEPTION Error:{str(e)}")
             mythread.stats["fail"] += 1
+        finally:
+            if client:
+                client.close()
         if fail_to_retry and not connected:
             time.sleep(random.randrange(6))
         else:
@@ -83,17 +110,27 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] -- {read_oper.command}")
-                        result, output = client.get(xpath=read_oper.command)
-                        logger.critical(f" [{i}] -- {output}")
+                        logger.critical(f" [{i}] [R] -- {read_oper.command}")
+                        for times in range(read_oper.getExecuteTimes()):
+                            if read_oper.getCommandType() == "rpc":
+                                result, output = client.call_rpc(rpc_content=read_oper.command)
+                            else:
+                                result, output = client.get(xpath=read_oper.command)
+                            logger.critical(f" [{i}] [R]  -- {result}")
+                        logger.critical(f" [{i}] [R]  -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.critical(write_oper.command)
-                        result, output = client.edit_config(config=write_oper.command,
-                                dataStore="running" if ( not write_oper.kwargs or not write_oper.kwargs.get("target")) 
+                        logger.critical(f" [{i}] [W] -- {write_oper.command}")
+                        for times in range(write_oper.getExecuteTimes()):
+                            if write_oper.getCommandType() == "rpc":
+                                result, output = client.call_rpc(rpc_content=write_oper.command)
+                            else:
+                                result, output = client.edit_config(config=write_oper.command,
+                                    dataStore="running" if ( not write_oper.kwargs or not write_oper.kwargs.get("target")) 
                                 else write_oper.kwargs["target"])
-                        logger.critical(output)
+                            logger.critical(f" [{i}] [W] -- {result}")
+                        logger.critical(f" [{i}] [W] -- {output}")
                     mythread.stats["succ"] += 1
                 if not read_operations and not write_operations:
                     mythread.stats["succ"] += 1
@@ -104,6 +141,9 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
+        finally:
+            if client:
+                client.close()
         if fail_to_retry and not connected:
             time.sleep(random.randrange(6))
         else:
@@ -131,15 +171,17 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] -- {read_oper.command}")
-                        result, reason, output = client.get(url=read_oper.command)
+                        logger.critical(f" [{i}] [R] -- {read_oper.command}")
+                        for times in range(read_oper.getExecuteTimes()):
+                            result, reason, output = client.get(url=read_oper.command)
                         logger.critical(f" [{i}] [R] -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
                         logger.critical(write_oper.command)
-                        result, reason, output = client.patch(url=write_oper.command,
-                                body=write_oper.kwargs["payload"])
+                        for times in range(write_oper.getExecuteTimes()):
+                            result, reason, output = client.patch(url=write_oper.command,
+                                    body=write_oper.kwargs["payload"])
                         logger.critical(f" [{i}] [W] -- {result} -- {reason}")
                     mythread.stats["succ"] += 1
             if to_close or not connected:
@@ -149,6 +191,9 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             logger.exception(e)
             logger.critical(f"Error:{str(e)}")
             mythread.stats["fail"] += 1
+        finally:
+            if client:
+                client.close()
         if not connected and fail_to_retry:
             time.sleep(random.randrange(6))
         else:
