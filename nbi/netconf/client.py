@@ -134,7 +134,6 @@ class NetconfSession:
     def call_rpc(self, rpc_content ):
 
         output = None
-
         try:
 
             if rpc_content == None: 
@@ -147,6 +146,53 @@ class NetconfSession:
 
             logger.exception(exception)           
             return (False, str(exception))                                                                           
+
+
+    def create_subscription(self, filter, stream_name, start_time, stop_time):
+
+        output = None
+        try:
+
+            self.check_connectivity()
+            output = self.establishConnection.create_subscription(filter=filter, stream_name=stream_name,
+                                                                  start_time=start_time, stop_time=stop_time)
+
+        except RPCError as exception:
+
+            logger.exception(exception)
+            output = exception
+            return (False, str(output))
+
+        except Exception as exception:
+
+            logger.exception(exception)
+            output = exception
+            return (False, str(output))
+
+        return (True, output)
+
+    def get_notification(self, block, timeout):
+
+        notification = []
+
+        try:
+            while (True):
+                self.check_connectivity()
+                output = self.establishConnection.take_notification(block=block, timeout=timeout)
+                if output == None:
+                    break
+                else:
+                    notification.append(output.notification_xml)
+
+        except RPCError as exception:
+            logger.exception(exception)
+            return (False, str(exception))
+
+        except Exception as e:
+            logger.exception(e)
+            return (False, str(e))
+
+        return (True, notification)
 
     def close(self):
 
@@ -185,4 +231,7 @@ if __name__ == "__main__":
             <data-type>real-time</data-type>
         </get-pm>"""))
     print(netconf_obj.get(xpath="/alarms/current-alarms"))
+
+    print(netconf_obj.create_subscription(None,"NETCONF",None,None))
+    print(netconf_obj.get_notification(block=1024,timeout=5))
     netconf_obj.close()

@@ -11,8 +11,11 @@ def main():
             <data-type>real-time</data-type>
         </get-pm> """
 
-    method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command(command="/alarms/current-alarms", kwargs={"repeat": 10}),
-                                                                         Command(command=get_pm,kwargs = {"repeat" :10, "type": "rpc"})], 
+    method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [
+                                                                         Command(command="/alarms/current-alarms", kwargs={"repeat": 2}),
+                                                                         Command(command=get_pm,kwargs = {"repeat" :2, "type": "rpc"}),
+                                                                         Command(command="NETCONF",kwargs = {"type": "stream", "stream_timeout":5})
+                                                                        ], 
                    None, 
                    True,True)
 

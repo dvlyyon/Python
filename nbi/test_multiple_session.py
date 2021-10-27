@@ -64,17 +64,19 @@ def cli_session_thread(iter_num,ip, port, user_name, passwd,
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] [R]-- {read_oper.command}")
+                        logger.critical(f" [{i}] [RC]-- {read_oper.command}")
                         for times in range(read_oper.getExecuteTimes()):
                             result, output = client.sendCmd_without_connection_retry(cmd=read_oper.command)
-                        logger.critical(f" [{i}] [R] -- {output}")
+                            logger.critical(f" [{i}] [RR] -- {result}")
+                        logger.critical(f" [{i}] [RR] -- {result} -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.critical(f" [{i}] [W] -- {write_oper.command}")
+                        logger.critical(f" [{i}] [WC] -- {write_oper.command}")
                         for times in range(write_oper.getExecuteTimes()):
                             result, output = client.sendCmd_without_connection_retry(cmd=write_oper.command)
-                        logger.critical(f" [{i}] [W] -- {output}")
+                            logger.critical(f" [{i}] [WR] -- {result}")
+                        logger.critical(f" [{i}] [WR] -- {result} -- {output}")
                     mythread.stats["succ"] += 1
             if to_close or not connected:
                 client.close()
@@ -110,18 +112,22 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] [R] -- {read_oper.command}")
+                        logger.critical(f" [{i}] [RC] -- {read_oper.command}")
                         for times in range(read_oper.getExecuteTimes()):
                             if read_oper.getCommandType() == "rpc":
                                 result, output = client.call_rpc(rpc_content=read_oper.command)
+                            elif read_oper.getCommandType() == "stream":
+                                result, output = client.create_subscription(None,"NETCONF",None,None)
+                                result, output = client.get_notification(True,
+                                        5 if not read_oper.getArgument("wait") else int(read_oper.getArgument("wait")))
                             else:
                                 result, output = client.get(xpath=read_oper.command)
-                            logger.critical(f" [{i}] [R]  -- {result}")
-                        logger.critical(f" [{i}] [R]  -- {output}")
+                            logger.critical(f" [{i}] [RR]  -- {result}")
+                        logger.critical(f" [{i}] [RR]  --  {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.critical(f" [{i}] [W] -- {write_oper.command}")
+                        logger.critical(f" [{i}] [WC] -- {write_oper.command}")
                         for times in range(write_oper.getExecuteTimes()):
                             if write_oper.getCommandType() == "rpc":
                                 result, output = client.call_rpc(rpc_content=write_oper.command)
@@ -129,9 +135,9 @@ def netconf_session_thread(iter_num,ip, port, user_name, passwd, read_operations
                                 result, output = client.edit_config(config=write_oper.command,
                                     dataStore="running" if ( not write_oper.kwargs or not write_oper.kwargs.get("target")) 
                                 else write_oper.kwargs["target"])
-                            logger.critical(f" [{i}] [W] -- {result}")
-                        logger.critical(f" [{i}] [W] -- {output}")
-                    mythread.stats["succ"] += 1
+                            logger.critical(f" [{i}] [WR] -- {result}")
+                        logger.critical(f" [{i}] [WR] -- {output}")
+                    mythread.stats["succ"] += 1 
                 if not read_operations and not write_operations:
                     mythread.stats["succ"] += 1
             if to_close or not connected:
@@ -171,18 +177,20 @@ def restconf_session_thread(iter_num,ip, port, user_name, passwd, read_operation
             if connected:
                 if read_operations:
                     for read_oper in read_operations:
-                        logger.critical(f" [{i}] [R] -- {read_oper.command}")
+                        logger.critical(f" [{i}] [RC] -- {read_oper.command}")
                         for times in range(read_oper.getExecuteTimes()):
                             result, reason, output = client.get(url=read_oper.command)
-                        logger.critical(f" [{i}] [R] -- {output}")
+                            logger.critical(f" [{i}] [RR] -- {result} -- {reason}")
+                        logger.critical(f" [{i}] [RR] -- {output}")
                     mythread.stats["succ"] += 1
                 if write_operations:
                     for write_oper in write_operations:
-                        logger.critical(write_oper.command)
+                        logger.critical(f" [{i}] [WC] -- {write_oper.command}")
                         for times in range(write_oper.getExecuteTimes()):
                             result, reason, output = client.patch(url=write_oper.command,
                                     body=write_oper.kwargs["payload"])
-                        logger.critical(f" [{i}] [W] -- {result} -- {reason}")
+                            logger.critical(f" [{i}] [WR] -- {result} -- {reason}")
+                        logger.critical(f" [{i}] [WR] -- {output}")
                     mythread.stats["succ"] += 1
             if to_close or not connected:
                 client.close()
