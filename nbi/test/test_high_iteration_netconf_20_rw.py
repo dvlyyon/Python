@@ -14,11 +14,11 @@ def main():
         </config>"""
     method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
                     [Command(command=write_oper)]
-                    , True)
+                    , True, True)
 
     test_parallel_sessions([
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para1)
-        ],3,300)
+        ],3,12*3600)
 
 
 if __name__ == "__main__":
