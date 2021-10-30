@@ -6,12 +6,12 @@ from nbi.test_multiple_session import *
 logger = logging.getLogger(__name__)
 
 def main():
-    method_para1 = (1000, '172.29.202.84', 22, 'admin0', 'e2e!Net4u#', [Command("show card-1-5")], None, True)
-    method_para2 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para3 = (1000, '172.29.202.84', 8181, 'admin2', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
-    method_para4 = (1000, '172.29.202.84', 830, 'admin3', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para5 = (1000, '172.29.202.84', 22, 'admin4', 'e2e!Net4u#', [Command("show card-1-5")], None, True)
-    method_para6 = (1000, '172.29.202.84', 8181, 'admin4', 'e2e!Net4u#', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
+    method_para1 = (1000, 'ddd.ddd.ddd.ddd', 22, 'admin0', 'xxxxxxxx', [Command("show card-1-5")], None, True)
+    method_para2 = (1000, 'ddd.ddd.ddd.ddd', 830, 'admin1', 'xxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
+    method_para3 = (1000, 'ddd.ddd.ddd.ddd', 8181, 'admin2', 'xxxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
+    method_para4 = (1000, 'ddd.ddd.ddd.ddd', 830, 'admin3', 'xxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
+    method_para5 = (1000, 'ddd.ddd.ddd.ddd', 22, 'admin4', 'xxxxxxxx', [Command("show card-1-5")], None, True)
+    method_para6 = (1000, 'ddd.ddd.ddd.ddd', 8181, 'admin4', 'xxxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
     test_parallel_sessions([
                             SessionTask('CLI', 20, cli_session_thread, method_para1),
                             SessionTask('NETCONF', 20, netconf_session_thread, method_para2),

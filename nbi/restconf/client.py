@@ -85,13 +85,13 @@ class RestconfCookieSession:
         self.conn.post(f"{self.baseurl}/logout")
 
 if __name__ == '__main__':
-#    sess = RestconfSession("172.29.202.84",8181,"administrator","e2e!Net4u#")
+#    sess = RestconfSession("aaa.aaa.aaa.84",8181,"administrator","xxxxxxx")
 #    print(sess.connect())
 #    s, r, d = sess.get("ioa-network-element:ne/equipment/card[name='1-5']")
 #    print(d)
 
 # username="administrator"
-# password="e2e!Net4u#"
+# password="xxxxxxx"
 # credential = b64encode(f"{username}:{password}".encode('utf-8')).decode("ascii")
 # auth={"Authorization" : "Basic %s" % credential }
 
@@ -106,7 +106,7 @@ if __name__ == '__main__':
 # data = res.read()
 # print(data.decode('utf-8'))
 
-    session = RestconfSession('172.29.202.83',8181,'dwu','Infinera@1')
+    session = RestconfSession('aaa.aaa.aaa.83',8181,'user','xxxxxx')
     session.connect()
     url="ioa-network-element:ne/equipment/card=1-5"
     payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'

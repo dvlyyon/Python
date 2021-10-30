@@ -11,14 +11,14 @@ def main():
             <data-type>real-time</data-type>
         </get-pm> """
 
-    method_para1 = (1000, '172.29.202.84', 830, 'radiustest6', 'Radius12', [
+    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 830, 'xxxx6', 'xxxx12', [
                                                                          Command(command="/alarms/current-alarms", kwargs={"repeat": 2}),
                                                                          Command(command=get_pm,kwargs = {"repeat" :2, "type": "rpc"}),
                                                                          Command(command="NETCONF",kwargs = {"type": "stream", "stream_timeout":5})
                                                                         ], 
                    None, 
                    True,True)
-    method_para2 = (1000, '172.29.202.84', 830, 'radiustest8', 'Radius123', [
+    method_para2 = (1000, 'aaa.aaa.aaa.aaa', 830, 'xxxx8', 'xxxx123', [
                                                                          Command(command="/alarms/current-alarms", kwargs={"repeat": 2}),
                                                                          Command(command=get_pm,kwargs = {"repeat" :2, "type": "rpc"}),
                                                                          Command(command="NETCONF",kwargs = {"type": "stream", "stream_timeout":5})

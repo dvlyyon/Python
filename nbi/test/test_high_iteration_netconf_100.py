@@ -6,15 +6,15 @@ from nbi.test_multiple_session import *
 logger = logging.getLogger(__name__)
 
 def main():
-    method_para1 = (1000, '172.29.202.84', 830, 'admin1', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     None, True, True)
-    method_para2 = (1000, '172.29.202.84', 830, 'admin2', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para2 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin2', 'xxxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     None, True,True)
-    method_para3 = (1000, '172.29.202.84', 830, 'admin3', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para3 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin3', 'xxxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     None, True,True)
-    method_para4 = (1000, '172.29.202.84', 830, 'admin4', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para4 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin4', 'xxxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     None, True,True)
-    method_para5 = (1000, '172.29.202.84', 830, 'admin5', 'e2e!Net4u#', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para5 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin5', 'xxxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     None, True, True)
 
     test_parallel_sessions([

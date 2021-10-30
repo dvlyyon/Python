@@ -216,7 +216,7 @@ class NetconfSession:
 
 
 if __name__ == "__main__":
-    netconf_obj = NetconfSession(ip='172.29.202.84',user='administrator',passwd='e2e!Net4u#')
+    netconf_obj = NetconfSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxxxxx')
     netconf_obj.connect()
     output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
     print(output)
