@@ -41,8 +41,8 @@ class NetconfSession:
 
                 self.establishConnection._session.transport.set_keepalive(interval=1)
 
-            except:
-                logger.exception(e)
+            except Exception as ee:
+                logger.exception(ee)
                 logger.warning("Session Disconnected.. Keep alive expires..!!")
             return (True, "Connected")
         except Exception as e:
@@ -216,7 +216,7 @@ class NetconfSession:
 
 
 if __name__ == "__main__":
-    netconf_obj = NetconfSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxxxxx')
+    netconf_obj = NetconfSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
     netconf_obj.connect()
     output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
     print(output)

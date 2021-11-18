@@ -294,7 +294,7 @@ if __name__ == "__main__":
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.DEBUG)
     # logger.addHandler(ch)
-    # method_para1 = (10, '172.29.14.151', 22, 'dci', 'Dci4523', [Command("ls")], None, True)
+    # method_para1 = (10, 'aaa.aaa.aaa.aaa', 22, 'dci', 'xxddd', [Command("ls")], None, True)
     method_para1 = (1000, 'aaa.aaa.aaa.aaa', 22, 'admin0', 'xxxxxxx', [Command("show card-1-5")], None, True)
     method_para2 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
     method_para3 = (1000, 'aaa.aaa.aaa.aaa', 8181, 'admin2', 'xxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)

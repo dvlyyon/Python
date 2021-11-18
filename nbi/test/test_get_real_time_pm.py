@@ -7,7 +7,7 @@ from nbi.gnmi.client import *
 logger = logging.getLogger(__name__)
 
 def main():
-    client  = GrpcClient(ip='172.29.202.84',port=50051, user='administrator',passwd='e2e!Net4u#',
+    client  = GrpcClient(ip='aaa.aaa.aaa.aaa',port=50051, user='administrator',passwd='xxxxxxxx',
             cert_path="/home/dyang/Workspace/repos/G30/G30_R5.0/scripts/grpc/G30_Certificates/",
             ssl_target_name_override="infinera.com.cn",
             ca_cert="infr-ca.crt"

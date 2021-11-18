@@ -59,7 +59,7 @@ class SSHSession:
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             try:
-                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False, banner_timeout=400, auth_timeout=300)
+                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False)
                 # self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
                                  # pkey               =   self.kwargs.get("pkey",None),
                                  # key_filename       =   self.kwargs.get("key_filename",None),
@@ -89,7 +89,7 @@ class SSHSession:
             self.shell.keep_this = self.ssh
 
             try:
-                self.ssh.get_transport().set_keepalive(interval=120)
+                self.ssh.get_transport().set_keepalive(interval=1)
 
             except Exception as e:
                 self.logger.warning("Session Disconnected.. Keep alive expires..!!")
@@ -300,10 +300,8 @@ class SSHSession:
             self.ssh.close()
 
 if __name__ == "__main__":
-    #ssh_obj = SSHSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
-    ssh_obj = SSHSession(ip='aaa.aaa.aaa.165',user='xxx',passwd='xxxxx')
+    ssh_obj = SSHSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
     ssh_obj.connect()
-    output = ssh_obj.sendCmd_without_connection_retry(cmd="ls", delay=2)
-    ssh_obj.close()
+    output = ssh_obj.sendCmd_without_connection_retry(cmd="show inventory", delay=2)
     print(output)
 
