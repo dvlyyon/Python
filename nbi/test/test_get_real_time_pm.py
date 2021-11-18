@@ -7,10 +7,10 @@ from nbi.gnmi.client import *
 logger = logging.getLogger(__name__)
 
 def main():
-    client  = GrpcClient(ip='aaa.aaa.aaa.aaa',port=50051, user='administrator',passwd='xxxxxxxx',
-            cert_path="/home/dyang/Workspace/repos/G30/G30_R5.0/scripts/grpc/G30_Certificates/",
-            ssl_target_name_override="infinera.com.cn",
-            ca_cert="infr-ca.crt"
+    client  = GrpcClient(ip='aaa.aaa.aaa.aaa',port=50051, user='admi',passwd='xxxxxxx',
+            cert_path="/home/...",
+            ssl_target_name_override="....",
+            ca_cert="i....t"
             )
     output = client.subscribe(1,[{GnmiSubscriptionKey.PATH : '/pm/real-time-pm-data/real-time-pm', 
                               GnmiSubscribeKey.MODE : GnmiStreamMode.SAMPLE}],
