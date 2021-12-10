@@ -27,6 +27,7 @@ class DateTimeEncoder(json.JSONEncoder):
 
 def appendData(toList,fromDic, keys):
     for name in sorted(keys):
+        print(fromDic)
         toList.append(fromDic[name])
 
 def appendProcessTitle(toTitle, suffix, keys):
@@ -167,7 +168,10 @@ mountPointList=[]
 mountPointData={}
 entry=State.INIT
 newDate=True
+lineNum=0
 for line in origFile: 
+    lineNum += 1
+    print("Line Number:" + str(lineNum))
     if state == State.INIT:
         match = re.match("^date -Iseconds$", line)
         if match:
@@ -219,7 +223,7 @@ for line in origFile:
         match = re.match('^\s*(\d+)\s+root\s+(\d+)\s+(\d+)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+(\d+)\s+\w+\s+([0-9.]+)\s+([0-9.]+)\s+[0-9:.]+\s+(\w+\.bin)',line)
         if match: 
             processName=match.group(9)
-#            print('Match ' + processName)
+            print('Match ' + processName)
             if not processCollected:
                 processNameList.append(processName)
             else:
