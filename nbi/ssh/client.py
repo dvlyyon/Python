@@ -59,7 +59,7 @@ class SSHSession:
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             try:
-                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False, banner_timeout=400, auth_timeout=300)
+                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False)
                 # self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
                                  # pkey               =   self.kwargs.get("pkey",None),
                                  # key_filename       =   self.kwargs.get("key_filename",None),
@@ -89,7 +89,7 @@ class SSHSession:
             self.shell.keep_this = self.ssh
 
             try:
-                self.ssh.get_transport().set_keepalive(interval=120)
+                self.ssh.get_transport().set_keepalive(interval=1)
 
             except Exception as e:
                 self.logger.warning("Session Disconnected.. Keep alive expires..!!")
@@ -116,6 +116,8 @@ class SSHSession:
 # ------------------------------------------------------------------------------------------------------------------
     def check_for_prompt(self, output_response: str, prompt_list: list, is_tl1: bool = False):
         all_prompt_list = []
+        if prompt_list is None:
+            prompt_list = self.initial_prompts
         if prompt_list!=None and prompt_list !=[]:
             if not isinstance(prompt_list,list):
                 all_prompt_list=[prompt_list]
@@ -246,7 +248,7 @@ class SSHSession:
             if self.shell.send_ready():
                 self.read_output_buffer()
                 self.shell.send('%s\n' % cmd)
-                time.sleep(delay)
+                #time.sleep(delay)
             else:
                 self.logger.debug("Paramiko send channel not ready")
                 return (False, "Paramiko send channel not ready")
@@ -260,6 +262,7 @@ class SSHSession:
 
         # self.logger.info("Entered: %s" % cmd)
 
+        got_prompt = False
         sleep_time = 0
         while sleep_time < delay:
             if self.shell.recv_ready():
@@ -269,6 +272,7 @@ class SSHSession:
                 # logger.info("####response=%s" % response)
                 output = output + self.removeANSIescapeSequence(response)
                 if self.check_for_prompt(output_response=output, prompt_list=prompt):
+                    got_prompt = True
                     logger.debug("Received output till the prompt given..!! command completed successfully..!!")
                     break
                 time.sleep(1)
@@ -279,8 +283,10 @@ class SSHSession:
                 sleep_time += 1
 
         self.logger.debug('After Removing ANSIescapeSquence=%s' % output)
-
-        return (True,output)
+        if got_prompt:
+            return (True,output)
+        else:
+            return (False,f"NOT get prompt in {delay} seconds. The OUTPUT is: {output}")
 
     def removeANSIescapeSequence(self, text):
         text = text.decode('utf-8', errors="ignore")
@@ -300,10 +306,8 @@ class SSHSession:
             self.ssh.close()
 
 if __name__ == "__main__":
-    #ssh_obj = SSHSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
-    ssh_obj = SSHSession(ip='aaa.aaa.aaa.165',user='xxx',passwd='xxxxx')
+    ssh_obj = SSHSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
     ssh_obj.connect()
-    output = ssh_obj.sendCmd_without_connection_retry(cmd="ls", delay=2)
-    ssh_obj.close()
+    output = ssh_obj.sendCmd_without_connection_retry(cmd="show inventory", delay=2)
     print(output)
 

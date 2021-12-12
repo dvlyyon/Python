@@ -12,7 +12,7 @@ def main():
                 <label>Changed by Netconf1</label>
             </ne>
         </config>"""
-    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
+    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], 
                     [Command(command=write_oper)]
                     , True, True)
 

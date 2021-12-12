@@ -13,7 +13,7 @@ import time
 ERROR_MESSAGE = "NETCONF FAILURE:"
 
 
-class NetconfSession:
+class NetconfCommonSession:
     namespace_details = None
 
     def __init__(self, ip, user, passwd, port=830, timeout=15, kwargs={}):
@@ -30,24 +30,8 @@ class NetconfSession:
         PASS = self.passwd
         PORT = port
 
-
-    def connect(self, timeout=100, hostkey_verify=False):
-
-        try:
-            self.establishConnection = manager.connect(host=self.ip, port=self.port, username=self.user,
-                                                       password=self.passwd, timeout=self.timeout, hostkey_verify=False,
-                                                       **self.kwargs)
-            try:
-
-                self.establishConnection._session.transport.set_keepalive(interval=1)
-
-            except:
-                logger.exception(e)
-                logger.warning("Session Disconnected.. Keep alive expires..!!")
-            return (True, "Connected")
-        except Exception as e:
-            logger.debug(e)
-            return (False,str(e))
+    def connect(self, timeout=60, hostkey_verify=False):
+        pass
 
     def check_connectivity(self):
 
@@ -214,9 +198,48 @@ class NetconfSession:
 
         return output
 
+class NetconfSession(NetconfCommonSession):
+
+    def connect(self, timeout=100, hostkey_verify=False):
+
+        try:
+            self.establishConnection = manager.connect(host=self.ip, port=self.port, username=self.user,
+                                                       password=self.passwd, timeout=self.timeout, hostkey_verify=False,
+                                                       **self.kwargs)
+            try:
+
+                self.establishConnection._session.transport.set_keepalive(interval=1)
+
+            except Exception as ee:
+                logger.exception(ee)
+                logger.warning("Session Disconnected.. Keep alive expires..!!")
+            return (True, "Connected")
+        except Exception as e:
+            logger.debug(e)
+            return (False,str(e))
+
+class NeconfCallHomeSession(NetconfCommonSession):
+
+    def connect(self, timeout=100, hostkey_verify=False):
+
+        try:
+            self.establishConnection = manager.call_home(host=self.ip, port=self.port, username=self.user,
+                                                       password=self.passwd, timeout=self.timeout, hostkey_verify=False,
+                                                       **self.kwargs)
+            try:
+
+                self.establishConnection._session.transport.set_keepalive(interval=1)
+
+            except Exception as ee:
+                logger.exception(ee)
+                logger.warning("Session Disconnected.. Keep alive expires..!!")
+            return (True, "Connected")
+        except Exception as e:
+            logger.debug(e)
+            return (False,str(e))
 
 if __name__ == "__main__":
-    netconf_obj = NetconfSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxxxxx')
+    netconf_obj = NetconfSession(ip='aaa.aaa.aaa.aaa',user='administrator',passwd='xxxxxxxx')
     netconf_obj.connect()
     output = netconf_obj.get(xpath="/ne/equipment/card[name='1-5']")
     print(output)
