@@ -1,4 +1,3 @@
-#!/usr/bin/python
 
 import numpy as np
 import cv2
@@ -7,8 +6,8 @@ def nothing(x):
     pass
 
 #make sure img2.width < img1.width and img2.height < img1.height
-img1 = cv2.imread('/home/david/Pictures/image8.jpg')
-img2 = cv2.imread('/home/david/Pictures/image11.jpg')
+img1 = cv2.imread('images/image8.jpg')
+img2 = cv2.imread('images/image11.jpg')
 
 cv2.imshow('image5O',img1)
 cv2.imshow('image10O', img2)
