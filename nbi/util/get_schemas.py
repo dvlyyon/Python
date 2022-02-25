@@ -1,13 +1,14 @@
 import os
 import subprocess
 import shutil
+import argparse
 import xml.dom.minidom as minidom
 
 from nbi.netconf.client import NetconfSession
 
-if __name__ == "__main__":
+def run(ip,port,user,password):
 
-    netconf_client = NetconfSession(ip='aaa',user='uuu',passwd='ppp')
+    netconf_client = NetconfSession(ip=ip,user=user,passwd=password,port=port)
     netconf_client.connect()
     result, output = netconf_client.get_schema_list()
     doc = minidom.parseString(output)
@@ -28,3 +29,13 @@ if __name__ == "__main__":
     result=subprocess.run(f"pyang -p {yang_dir} -f jstree -o ./gr.html {yang_dir}/ne.yang",shell=True)
     print(result)
     netconf_client.close()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--host', required=True, help='The NE IP address')
+    parser.add_argument('-p', '--port', default='830', help='The Netconf Server port number')
+    parser.add_argument('-u', '--user_name', required=True, help='The user name to login NE')
+    parser.add_argument('--passwd', required=True, help='The password for user to login NE')
+    args = parser.parse_args()
+
+    run(args.host, args.port, args.user_name, args.passwd)
