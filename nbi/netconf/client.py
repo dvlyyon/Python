@@ -83,6 +83,35 @@ class NetconfCommonSession:
 
         return (False, str(output))
 
+    def get_schema(self, identifier, version, format):
+
+        output = None
+        result = True
+
+        try:
+            self.check_connectivity()
+            output = self.establishConnection.get_schema(identifier=identifier, version=version, format=format)
+
+        except Exception as ex:
+            result = False
+            logger.exception(ex)
+            output = ex
+
+
+        return (result, output)
+
+
+    def get_schema_list(self):
+
+        output = None
+        result = True
+
+        return self.get(xml="""
+        <netconf-state xmlns=
+            "urn:ietf:params:xml:ns:yang:ietf-netconf-monitoring">
+            <schemas/>
+        </netconf-state>""")
+
     def edit_config(self, config, dataStore, default_operation=None, test_option=None, error_option=None):
 
         if config == None:
