@@ -5,19 +5,15 @@ import argparse
 import xml.dom.minidom as minidom
 
 from nbi.netconf.client import NetconfSession
+from nbi.ssh.client import SSHSession
 
-def run(ip,port,user,password):
-
+def retrieve_schema(ip,port,user,password,yang_dir):
     netconf_client = NetconfSession(ip=ip,user=user,passwd=password,port=port)
     netconf_client.connect()
     result, output = netconf_client.get_schema_list()
     doc = minidom.parseString(output)
     node = doc.documentElement
     schemas = doc.getElementsByTagName("schema")
-    yang_dir = "./tmp_yang_dir"
-    if os.path.exists(yang_dir):
-        shutil.rmtree(yang_dir)
-    os.mkdir(yang_dir)
     for schema in schemas:
         identifier = schema.getElementsByTagName("identifier")[0].childNodes[0].data
         version = schema.getElementsByTagName("version")[0].childNodes[0].data
@@ -26,9 +22,38 @@ def run(ip,port,user,password):
             r, y = netconf_client.get_schema(identifier,version,fmt)
             with open(f"{yang_dir}/{identifier}.yang", "w") as f:
                 f.write(y.data)
-    result=subprocess.run(f"pyang -p {yang_dir} -f jstree -o ./gr.html {yang_dir}/ne.yang",shell=True)
-    print(result)
     netconf_client.close()
+
+
+def run(ip,port,user,password):
+    cli_client = SSHSession(ip=ip,user=user,passwd=password)
+    cli_client.connect()
+    result, output = cli_client.sendCmd_without_connection_retry("swversion")
+    version = None
+    command = None
+    if result:
+        lines = output.split("\n")
+        for line in lines:
+            columns = line.split()
+            if " Active " in line:
+                version = "R{}_{}".format(columns[5],columns[6].replace("-","_"))
+                yang_dir = f"{version}/yang"
+                command = f"pyang -p {yang_dir} -f jstree -o ./{version}/{version}.html {yang_dir}/ne.yang {yang_dir}/fault-management.yang"
+                break
+            elif "-active" in line:
+                version = "{}_{}".format(columns[2].split("-")[1],columns[2].split("-")[3])
+                yang_dir = f"{version}/yang"
+                command = f"pyang -p {yang_dir} -f jstree -o ./{version}/{version}.html {yang_dir}/ioa-network-element.yang {yang_dir}/ioa-alarm.yang {yang_dir}/ioa-pm.yang"
+                break
+    cli_client.close()
+
+    if not os.path.exists(yang_dir):
+       # shutil.rmtree(yang_dir)
+        os.mkdir(version)
+        os.mkdir(yang_dir)
+        retrieve_schema(ip=ip,user=user,port=port,password=password,yang_dir=yang_dir)
+        result=subprocess.run(command,shell=True)
+        print(result)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
