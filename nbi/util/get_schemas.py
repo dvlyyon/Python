@@ -56,7 +56,7 @@ def run(ip,port,user,password,force,pattern):
                 break
     cli_client.close()
 
-    if force:
+    if force and os.path.exists(version):
        shutil.rmtree(version)
 
 
