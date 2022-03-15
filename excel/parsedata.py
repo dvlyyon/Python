@@ -163,12 +163,14 @@ processNum=0
 processNameList=[]
 processDataVIR={}
 processDataRES={}
+processDataSHR={}
 processDataCPU={}
 processDataMEM={}
 processCollected=False
 mountPointCollected=False
 mountPointList=[]
 mountPointData={}
+mountUsageData={}
 entry=State.INIT
 newDate=True
 for line in origFile: 
@@ -220,7 +222,7 @@ for line in origFile:
             state=State.T_CPU_MEM
             entry=State.T_L_MEM
     elif state == State.T_CPU_MEM:
-        match = re.match('^\s*(\d+)\s+root\s+(\d+)\s+(\d+)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+(\d+)\s+\w+\s+([0-9.]+)\s+([0-9.]+)\s+[0-9:.]+\s+([\w.-]+)',line)
+        match = re.match('^\s*(\d+)\s+root\s+(\d+)\s+(\d+)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+([\d.]+[mg]?)\s+\w+\s+([0-9.]+)\s+([0-9.]+)\s+[0-9:.]+\s+([\w.-]+)',line)
         if match: 
             processName=match.group(9)
 #            print('Match ' + processName)
@@ -230,8 +232,10 @@ for line in origFile:
                 assert processName in processNameList
             virM=match.group(4)
             resM=match.group(5)
+            shrM=match.group(6)
             processDataVIR[processName]=cast2K(virM)
             processDataRES[processName]=cast2K(resM)
+            processDataSHR[processName]=cast2K(shrM)
             processDataCPU[processName]=float(match.group(7))
             processDataMEM[processName]=float(match.group(8))
             entry=State.T_CPU_MEM
@@ -243,11 +247,13 @@ for line in origFile:
                     appendProcessTitle(title,' MEM%',processNameList)
                     appendProcessTitle(title,' VIR(KB)',processNameList)
                     appendProcessTitle(title,' RES(KB)',processNameList)
+                    appendProcessTitle(title,' SHR(KB)',processNameList)
                 processCollected=True
                 appendData(tmpline,processDataCPU,processNameList)
                 appendData(tmpline,processDataMEM,processNameList)
                 appendData(tmpline,processDataVIR,processNameList)
                 appendData(tmpline,processDataRES,processNameList)
+                appendData(tmpline,processDataSHR,processNameList)
                 processDataCPU.clear()
                 processDataMEM.clear()
                 processDataRES.clear()
@@ -293,6 +299,7 @@ drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timesta
 drawLineChart(ws,data,7+processNum,6+processNum*2,"Memory Usage per Process", "Usage %","Timestamp No.",35)
 drawLineChart(ws,data,7+processNum*2,6+processNum*3,"Virtual Memory per Process", "Memory (KB)","Timestamp No.",65)
 drawLineChart(ws,data,7+processNum*3,6+processNum*4,"Resident Memory per Process", "Memory (KB)","Timestamp No.",95)
+drawLineChart(ws,data,7+processNum*4,6+processNum*5,"Shared Memory per Process", "Memory (KB)","Timestamp No.",125)
 #drawLineChart(ws,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %","Timestamp No.",125)
 
 wb.save(sys.argv[1]+".xlsx")
