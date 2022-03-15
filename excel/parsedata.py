@@ -36,13 +36,13 @@ def appendProcessTitle(toTitle, suffix, keys):
         else:
             toTitle.append(name + suffix)
 
-def appendFileSystemTitle(toTitle, keys):
+def appendFileSystemTitle(toTitle, suffix, keys):
     for name in sorted(keys):
 #        if name == '/':
 #            tmpString='root'
 #        else:
 #            tmpString=name.replace('/',' ')
-        toTitle.append('FS: '+name)
+        toTitle.append('FS: '+name+' '+suffix)
 
 def cast2K(value):
     if value[-1] == 'm':
@@ -150,6 +150,7 @@ wb = Workbook()
 ws = wb.active
 csTotal = wb.create_chartsheet(title='Total CPU & Memory',index=0)
 csDisk = wb.create_chartsheet(title='Dist Usage', index=1)
+csDiskUsed = wb.create_chartsheet(title='Dist Used Statistics', index=2)
 
 ws.title = "Detailed CPU Memory"
 
@@ -169,7 +170,7 @@ processDataMEM={}
 processCollected=False
 mountPointCollected=False
 mountPointList=[]
-mountPointData={}
+mountUsedData={}
 mountUsageData={}
 entry=State.INIT
 newDate=True
@@ -259,23 +260,27 @@ for line in origFile:
                 processDataRES.clear()
                 processDataVIR.clear()
     elif state == State.D_STORAGE:
-        match = re.match('^[\w\d/]+\s+\d+\s+\d+\s+\d+\s+([0-9.]+)%\s+(\/.*)$',line)
+        match = re.match('^[\w\d/]+\s+\d+\s+(\d+)\s+\d+\s+([0-9.]+)%\s+(\/.*)$',line)
         if match:
-            mountPoint=match.group(2)
+            mountPoint=match.group(3)
 #            print('Match storage:' + mountPoint)
             if mountPointCollected:
                 assert mountPoint in mountPointList
             else:
                 mountPointList.append(mountPoint)
-            mountPointData[mountPoint]=int(match.group(1))
+            mountUsedData[mountPoint]=int(match.group(1))
+            mountUsageData[mountPoint]=int(match.group(2))
             entry=State.D_STORAGE
         else:
             if entry == State.D_STORAGE:
                 if not mountPointCollected:
-                    appendFileSystemTitle(title,mountPointList)
+                    appendFileSystemTitle(title, ' Usage%', mountPointList)
+                    appendFileSystemTitle(title, ' Used(KB)', mountPointList)
                 mountPointCollected=True
-                appendData(tmpline,mountPointData,mountPointList)
-                mountPointData.clear()
+                appendData(tmpline,mountUsageData,mountPointList)
+                appendData(tmpline,mountUsedData,mountPointList)
+                mountUsageData.clear()
+                mountUsedData.clear()
                 data.append(tmpline)
 #                print(tmpline)
                 assert len(tmpline) == len(title)
@@ -292,7 +297,8 @@ with open(sys.argv[1]+".txt", 'w') as json_file:
 processNum=len(processNameList)
 mountPointNum=len(mountPointList)
 drawMixLineChartInChartSheet(ws,csTotal,data,2,4,"Total CPU & Memory ","Usage %","Timestamp No.", 5, 6, "Size (KB)")
-drawLineChartInChartSheet(ws,csDisk,data,7+processNum*4,6+processNum*4+mountPointNum,"Disk Usage", "Usage %", "Timestamp No.",5)
+drawLineChartInChartSheet(ws,csDisk,data,7+processNum*5,6+processNum*5+mountPointNum,"Disk Usage", "Usage %", "Timestamp No.",5)
+drawLineChartInChartSheet(ws,csDiskUsed,data,7+processNum*5+mountPointNum,6+processNum*5+mountPointNum*2,"Disk Used Statistic", "Used (KB)","Timestamp No.", 5)
 #drawLineChart(ws,data,2,4,"Total CPU & Memory Usage","Usage %","Timestamp No.", 5)
 #drawLineChart(ws,data,5,6,"Total Free & Avail Memory", "Memory (KB)","Timestamp No.",5)
 drawLineChart(ws,data,7,6+processNum,"CPU Usage per Process", "Usage %","Timestamp No.", 5)
