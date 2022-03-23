@@ -40,14 +40,14 @@ def run(ip,port,user,password,force,pattern):
         for line in lines:
             columns = line.split()
             if " Active " in line:
-                version = "R{}_{}".format(columns[5],columns[6].replace("-","_"))
+                version = "R{}_{}".format(columns[5],columns[6])
                 yang_dir = f"{version}/yang"
                 commands.append(f"pyang -p {yang_dir} -f jstree -o ./{version}/private_{version}.html {yang_dir}/{pattern.split('||')[0]}*.yang")
                 commands.append(f"pyang -p {yang_dir} -f jstree -o ./{version}/ietf_{version}.html {yang_dir}/iana-*.yang {yang_dir}/ietf-*.yang {yang_dir}/libnet*.yang {yang_dir}/n*.yang")
                 commands.append(f"pyang -p {yang_dir} -f jstree -o ./{version}/openconfig_{version}.html {yang_dir}/openconfig-*.yang")
                 break
             elif "-active" in line:
-                version = "{}_{}".format(columns[2].split("-")[1],columns[2].split("-")[3])
+                version = "{}_{}".format(columns[2].split("-")[1],columns[2].split("F-")[1])
                 yang_dir = f"{version}/yang"
                 command = f"pyang -p {yang_dir} -f jstree -o ./{version}/private_{version}.html {yang_dir}/{pattern.split('||')[0]}*.yang"
                 commands.append(command)
