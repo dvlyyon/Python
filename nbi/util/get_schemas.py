@@ -17,7 +17,8 @@ def retrieve_schema(ip,port,user,password,yang_dir,pattern):
     schemas = doc.getElementsByTagName("schema")
     for schema in schemas:
         identifier = schema.getElementsByTagName("identifier")[0].childNodes[0].data
-        version = schema.getElementsByTagName("version")[0].childNodes[0].data
+        version = "" if len(schema.getElementsByTagName("version")[0].childNodes) == 0 \
+                    else schema.getElementsByTagName("version")[0].childNodes[0].data
         fmt = schema.getElementsByTagName("format")[0].childNodes[0].data
         if fmt == "yang":
             r, y = netconf_client.get_schema(identifier,version,fmt)
