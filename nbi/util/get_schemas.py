@@ -23,12 +23,17 @@ def retrieve_schema(ip,port,user,password,yang_dir,pattern):
         if fmt == "yang":
             r, y = netconf_client.get_schema(identifier,version,fmt)
             prefix = ""
-            tomatch = re.compile("[\n\r]+\s+namespace[ ]+\"http://(\w+)\.com\S+\";[ ]*[\n\r]+")
-            match = tomatch.search(y.data)
-            if match:
-                com = match.group(1)
-                pattern["com"]=com
-                prefix=f"{com}."
+            if identifier.startswith("openconfig-"):
+                pattern["openconfig"]=True
+            elif identifier.startswith("org-openroadm"):
+                pattern["openroadm"]=True
+            else:
+                tomatch = re.compile("[\n\r]+\s+namespace[ ]+\"http://(\w+)\.com\S+\";[ ]*[\n\r]+")
+                match = tomatch.search(y.data)
+                if match:
+                    com = match.group(1)
+                    pattern["com"]=com
+                    prefix=f"{com}."
             with open(f"{yang_dir}/{prefix}{identifier}.yang", "w") as f:
                 f.write(y.data)
     netconf_client.close()
@@ -43,10 +48,14 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         pattern={}
         commands={}
         retrieve_schema(ip=ip,user=user,port=port,password=password,yang_dir=yang_dir,pattern=pattern)
-        com=pattern.get('com') 
-        commands[com]=f"pyang -p {yang_dir} -f jstree -o ./{version}/{com}_{version}.html {yang_dir}/{com}*.yang"
         commands["ietf"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/ietf_{version}.html {yang_dir}/iana-*.yang {yang_dir}/ietf-*.yang {yang_dir}/libnet*.yang {yang_dir}/n*.yang"
-        commands["openconfig"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/openconfig_{version}.html {yang_dir}/openconfig-*.yang"
+        com=pattern.get('com') 
+        if com:
+            commands[com]=f"pyang -p {yang_dir} -f jstree -o ./{version}/{com}_{version}.html {yang_dir}/{com}*.yang"
+        if pattern.get('openconfig'):
+            commands["openconfig"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/openconfig_{version}.html {yang_dir}/openconfig-*.yang"
+        if pattern.get('openroadm'):
+            commands["openroadm"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/openroadm_{version}.html {yang_dir}/org-openroadm-*.yang"
         
 
         result={}
