@@ -10,7 +10,9 @@ from nbi.ssh.client import SSHSession
 
 def retrieve_schema(ip,port,user,password,yang_dir,pattern):
     netconf_client = NetconfSession(ip=ip,user=user,passwd=password,port=port)
-    netconf_client.connect()
+    result, output = netconf_client.connect()
+    if not result:
+        return (result, output)
     result, output = netconf_client.get_schema_list()
     doc = minidom.parseString(output)
     node = doc.documentElement
@@ -22,6 +24,8 @@ def retrieve_schema(ip,port,user,password,yang_dir,pattern):
         fmt = schema.getElementsByTagName("format")[0].childNodes[0].data
         if fmt == "yang":
             r, y = netconf_client.get_schema(identifier,version,fmt)
+            if not r:
+                return (r,y)
             prefix = ""
             if identifier.startswith("openconfig-"):
                 pattern["openconfig"]=True
@@ -47,7 +51,10 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         os.mkdir(yang_dir)
         pattern={}
         commands={}
-        retrieve_schema(ip=ip,user=user,port=port,password=password,yang_dir=yang_dir,pattern=pattern)
+        try:
+            retrieve_schema(ip=ip,user=user,port=port,password=password,yang_dir=yang_dir,pattern=pattern)
+        except Exception as e:
+            return (False, e)
         commands["ietf"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/ietf_{version}.html {yang_dir}/iana-*.yang {yang_dir}/ietf-*.yang {yang_dir}/libnet*.yang {yang_dir}/n*.yang"
         com=pattern.get('com') 
         if com:
@@ -61,12 +68,16 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         result={}
         for command in commands:
             result[command]=subprocess.run(commands[command],shell=True)
-        return result
+        return (True, result)
 
 def run(ip,port,user,password,force,pattern):
-    cli_client = SSHSession(ip=ip,user=user,passwd=password)
-    cli_client.connect()
+    cli_client = SSHSession(ip=ip,user=user,passwd=password,kwargs={'timeout':15,})
+    result,output = cli_client.connect()
+    if not result:
+        return (result, output)
     result, output = cli_client.sendCmd_without_connection_retry("swversion")
+    if not result:
+        return (result, output)
     cli_client.close()
     version = None
     commands = []

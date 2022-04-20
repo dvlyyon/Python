@@ -17,7 +17,6 @@ class SSHSession:
                  port=22,
                  user="secadmin",
                  passwd="Infinera1",
-                 timeout=15,
                  kwargs={}):
 
         self.initial_prompts = ["> ","$ ","# "]
@@ -32,6 +31,7 @@ class SSHSession:
         self.enable = False
         self.config = False
         self.enable = False
+        self.kwargs = kwargs
     
 
     def connect(self):
@@ -59,25 +59,25 @@ class SSHSession:
             self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             try:
-                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False)
-                # self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
-                                 # pkey               =   self.kwargs.get("pkey",None),
-                                 # key_filename       =   self.kwargs.get("key_filename",None),
-                                 # timeout            =   self.kwargs.get("timeout",None),
-                                 # allow_agent        =   self.kwargs.get("allow_agent",None),
-                                 # look_for_keys      =   self.kwargs.get("look_for_keys",True),
-                                 # compress           =   self.kwargs.get("compress",False),
-                                 # sock               =   self.kwargs.get("sock",None),
-                                 # gss_auth           =   self.kwargs.get("gas_auth",False),
-                                 # gss_kex            =   self.kwargs.get("gas_kex",False),
-                                 # gss_deleg_creds    =   self.kwargs.get("gss_deleg_creds",True),
-                                 # gss_host           =   self.kwargs.get("gss_host",None),
-                                 # banner_timeout     =   self.kwargs.get("banner_timeout",None),
-                                 # auth_timeout       =   self.kwargs.get("auth_timeout",None),
-                                 # gss_trust_dns      =   self.kwargs.get("gss_trust_dns",True),
-                                 # passphrase         =   self.kwargs.get("passphrase",None),
+                #self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,look_for_keys=False)
+                self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd,
+                                 pkey               =   self.kwargs.get("pkey",None),
+                                 key_filename       =   self.kwargs.get("key_filename",None),
+                                 timeout            =   self.kwargs.get("timeout",None),
+                                 allow_agent        =   self.kwargs.get("allow_agent",None),
+                                 look_for_keys      =   self.kwargs.get("look_for_keys",False),
+                                 compress           =   self.kwargs.get("compress",False),
+                                 sock               =   self.kwargs.get("sock",None),
+                                 gss_auth           =   self.kwargs.get("gas_auth",False),
+                                 gss_kex            =   self.kwargs.get("gas_kex",False),
+                                 gss_deleg_creds    =   self.kwargs.get("gss_deleg_creds",True),
+                                 gss_host           =   self.kwargs.get("gss_host",None),
+                                 banner_timeout     =   self.kwargs.get("banner_timeout",None),
+                                 auth_timeout       =   self.kwargs.get("auth_timeout",None),
+                                 gss_trust_dns      =   self.kwargs.get("gss_trust_dns",True),
+                                 passphrase         =   self.kwargs.get("passphrase",None),
                                  # disabled_algorithms=   self.disable_algorithm,
-                                 # )
+                                 )
 
             except Exception as e: 
                 raise Exception( "SSH connection to '%s' failed:%s" % (self.ip, str(e)))
