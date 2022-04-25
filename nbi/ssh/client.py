@@ -34,6 +34,16 @@ class SSHSession:
         self.kwargs = kwargs
     
 
+    def get_sftp_client(self):
+        try:
+            self.ssh = paramiko.SSHClient()
+            self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.ssh.connect(self.ip, port=self.port, username=self.user, password=self.passwd, look_for_keys=False)
+            self.sftp=self.ssh.open_sftp()
+            return (True, self.sftp)
+        except Exception as e:
+            return (False, str(e))
+
     def connect(self):
 
         try:

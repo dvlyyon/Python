@@ -42,6 +42,25 @@ def retrieve_schema(ip,port,user,password,yang_dir,pattern):
                 f.write(y.data)
     netconf_client.close()
 
+def retrieve_private_schema(ip, port, user, password, version, com, info):
+    if version > "R5" and com:
+        os.chdir(version)
+        os.mkdir('private')
+        os.chdir('private')
+        try: 
+            cli_client = SSHSession(ip=ip,user=user,passwd=password,kwargs={'timeout':15,})
+            result,sftp_client = cli_client.get_sftp_client()
+            if not result:
+                return (result, sftp_client)
+            sftp_client.chdir(f"/opt/{com}/thanos/local/etc/model/yang/private/ioa-ext")
+            files=sftp_client.listdir()
+            for f in files:
+                sftp_client.get(f,f"./{f}")
+        except Exception as e:
+            return (False, str(e))
+        info['retrieve private yang']="Success"
+    return (True, info)
+
 def createTree(ip, port, user, password, force, version, yang_dir):
     if force and os.path.exists(version):
        shutil.rmtree(version)
@@ -68,7 +87,11 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         result={}
         for command in commands:
             result[command]=subprocess.run(commands[command],shell=True)
-        return (True, result)
+        return retrieve_private_schema(ip, port, user, password, version, com, result)
+    else:
+        return (True, {"path exist": "ignore"})
+        
+
 
 def run(ip,port,user,password,force,pattern):
     cli_client = SSHSession(ip=ip,user=user,passwd=password,kwargs={'timeout':15,})
@@ -104,5 +127,6 @@ if __name__ == "__main__":
     parser.add_argument('--pattern', default='',  help='is use to distigush private mode')
     args = parser.parse_args()
 
-    print(args.refresh)
-    run(args.host, args.port, args.user_name, args.passwd, args.refresh, args.pattern)
+    result, output = run(args.host, args.port, args.user_name, args.passwd, args.refresh, args.pattern)
+    print(output)
+    print(result)
