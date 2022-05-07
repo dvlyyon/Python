@@ -154,7 +154,7 @@ csDiskUsed = wb.create_chartsheet(title='Dist Used Statistics', index=2)
 
 ws.title = "Detailed CPU Memory"
 
-title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(KB)","Total Avail Mem(KB)"]
+title = ["Time", "Total CPU Used%", "Total (P)Memory Used%", "Total (L)Memory Used%","Total Free Mem(MB)","Total Avail Mem(MB)"]
 data=[]
 data.append(title)
 state=State.INIT
