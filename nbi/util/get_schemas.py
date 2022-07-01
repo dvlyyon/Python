@@ -36,8 +36,14 @@ def retrieve_schema(ip,port,user,password,yang_dir,pattern):
                 match = tomatch.search(y.data)
                 if match:
                     com = match.group(1)
-                    pattern["com"]=com
-                    prefix=f"{com}."
+                    cominfo = pattern.get("com") if pattern.get("com") else \
+                            {"name": com, "models": []}
+                    if not (cominfo["name"] == com):
+                        return (False, 
+                                f"There two company information in yang {com}:{cominfo['com']}")
+                    pattern["com"]=cominfo
+                    cominfo["models"].append(f"{identifier}.yang")
+                    #prefix=f"{com}."
             with open(f"{yang_dir}/{prefix}{identifier}.yang", "w") as f:
                 f.write(y.data)
     netconf_client.close()
@@ -75,9 +81,11 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         except Exception as e:
             return (False, e)
         commands["ietf"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/ietf_{version}.html {yang_dir}/iana-*.yang {yang_dir}/ietf-*.yang {yang_dir}/libnet*.yang {yang_dir}/n*.yang"
-        com=pattern.get('com') 
-        if com:
-            commands[com]=f"pyang -p {yang_dir} -f jstree -o ./{version}/{com}_{version}.html {yang_dir}/{com}*.yang"
+        cominfo=pattern.get('com') 
+        if cominfo:
+            com_model_files=f' {yang_dir}/'.join(cominfo['models'])
+            com_model_files=f"{yang_dir}/{com_model_files}"
+            commands[cominfo['name']]=f"pyang -p {yang_dir} -f jstree -o ./{version}/{cominfo['name']}_{version}.html {com_model_files}"
         if pattern.get('openconfig'):
             commands["openconfig"]=f"pyang -p {yang_dir} -f jstree -o ./{version}/openconfig_{version}.html {yang_dir}/openconfig-*.yang"
         if pattern.get('openroadm'):
@@ -87,7 +95,7 @@ def createTree(ip, port, user, password, force, version, yang_dir):
         result={}
         for command in commands:
             result[command]=subprocess.run(commands[command],shell=True)
-        return retrieve_private_schema(ip, port, user, password, version, com, result)
+        return retrieve_private_schema(ip, port, user, password, version, cominfo['name'], result)
     else:
         return (True, {"path exist": "ignore"})
         
