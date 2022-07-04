@@ -11,4 +11,6 @@ def get_command_output(command):
 
 if __name__ == "__main__":
     r, i = get_command_output(sys.argv[1])
-    print(i.split('\n'))
+    for line in i.split('\n'):
+        print(line)
+    print(r)
