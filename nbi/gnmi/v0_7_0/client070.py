@@ -29,9 +29,9 @@ class gNMISession:
         self.ssl_target_name_override   =   ssl_target_name_override
         self.secure_connection_type     =   secure_connection_type
         self.credentials                =   [('username', username), ('password', password)]
-        self.ca_certificate             =   ca_cert 
-        self.client_certificate         =   client_cert 
-        self.clientKey                  =   client_key 
+        self.ca_certificate             =   self.certificate_path + '/' + ca_cert 
+        self.client_certificate         =   self.certificate_path + '/' + client_cert if client_cert else None
+        self.clientKey                  =   self.certificate_path + '/' + client_key if client_key else None
         self.channel                    =   None
         self.telemetry_data_dict        = {}
         self.subscribe_requests         = {}
@@ -46,8 +46,10 @@ class gNMISession:
             if self.secure_connection_type:
 
                 logger.info("In Secure Connection....")
-                ca_cert = open(self.certificate_path + self.ca_certificate,mode='rb').read()
-                cred = grpc.ssl_channel_credentials(ca_cert)
+                ca_cert = open(self.ca_certificate,mode='rb').read()
+                client_key = open(self.clientKey, mode='rb').read() if self.clientKey else None
+                client_cert = open(self.client_certificate, mode='rb').read() if self.client_certificate else None
+                cred = grpc.ssl_channel_credentials(ca_cert,client_key,client_cert)
                 target_override=[]
                 if self.ssl_target_name_override !=None:
                     target_override.append(('grpc.ssl_target_name_override', self.ssl_target_name_override,))
