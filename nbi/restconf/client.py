@@ -82,18 +82,24 @@ class RestconfSession():
         self.conn = None
 
 class RestconfCookieSession:
-    def __init__(self, host, port, username, password):
+    def __init__(self, host, port, username, password, scheme="https", ca=None, certchain=None):
         self.host = host
         self.port = port
         self.username = username
         self.password = password
         self.conn = requests.Session()
-        self.baseurl = f"https://{host}:{port}"
+        self.baseurl = f"{scheme}://{host}:{port}"
         self.dataurl = f"{self.baseurl}/restconf/data"
+        if ca:
+            self.conn.verify = ca
+        else:
+            self.conn.verify = False
+        if certchain:
+            self.conn.cert = certchain
 
     def login(self):
-        self.conn.verify = False
-        res=self.conn.post(f"{self.baseurl}/login", json={'username': self.username, 'password': self.password}, verify=False)
+        #self.conn.verify = False
+        res=self.conn.post(f"{self.baseurl}/login", json={'username': self.username, 'password': self.password})
         return self._parseresponse(res)
 
     def connect(self):
@@ -115,6 +121,9 @@ class RestconfCookieSession:
 
     def logout(self):
         self.conn.post(f"{self.baseurl}/logout")
+
+    def close(self):
+        self.logout()
 
 if __name__ == '__main__':
 #    sess = RestconfSession("aaa.aaa.aaa.aaa",8181,"administrator","xxxxxxxx")
@@ -138,9 +147,14 @@ if __name__ == '__main__':
 # data = res.read()
 # print(data.decode('utf-8'))
 
-    session = RestconfSession('aaa.aaa.aaa.aaa',8181,'dwu','Infinera@1')
+    # session = RestconfSession('aaa.aaa.aaa.aaa',8181,'dwu','Infinera@1')
+    # session.connect()
+    # url="ioa-network-element:ne/equipment/card=1-5"
+    # payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'
+    # result, reason, output = session.patch(url,body=payload)
+    # print(result)
+    session = RestconfCookieSession('172.29.202.84',8181,'administrator','e2e!Net4u#',scheme='https',ca='/home/david/Workspace/git/certificat/ecdsa_ca.crt',
+            certchain=('/home/david/Workspace/git/certificat/myne111.chain.crt','/home/david/Workspace/git/certificat/private/myne111.key'))
     session.connect()
-    url="ioa-network-element:ne/equipment/card=1-5"
-    payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'
-    result, reason, output = session.patch(url,body=payload)
-    print(result)
+    print(session.get("ioa-network-element:ne/equipment/card=1-5"))
+    session.close()
