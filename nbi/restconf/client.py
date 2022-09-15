@@ -7,7 +7,7 @@ import requests
 logger = logging.getLogger(__name__)
 class RestconfSession():
 
-    def __init__(self, host, port, username, password):
+    def __init__(self, host, port, username, password, scheme="https", ca=None, certchain=None):
         self.host = host
         self.port = port
         self.username = username
@@ -19,13 +19,26 @@ class RestconfSession():
         self.json_content = {"Content-Type" : "application/yang-data+json"}
         self.connection_header = {"Connection" : "Keep-Alive", "Keep-Alive": "timeout=5, max=100"}
         self.connection_close = {"Connection" : "close"}
+        self.ca = ca
+        self.cert = None
+        self.key = None
+        if certchain:
+            self.cert = certchain[0]
+            self.key = certchain[1]
         self.conn = None
 
     def connect(self):
         try:
             if self.conn:
                 self.conn.close()
-            self.conn = httpclient.HTTPSConnection(self.host,self.port,context=ssl._create_stdlib_context(ssl.PROTOCOL_TLS))
+            if self.ca:
+                context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+                context.load_verify_locations(self.ca)
+            else:
+                context = ssl.create_default_context()
+            if self.cert:
+                context.load_cert_chain(self.cert,self.key)
+            self.conn = httpclient.HTTPSConnection(self.host,self.port,context=context)
             self.conn.request("GET","/.well-known/host-meta", 
                     headers={**self.root_header, **self.auth})
             response = self.conn.getresponse()
@@ -153,7 +166,9 @@ if __name__ == '__main__':
     # payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'
     # result, reason, output = session.patch(url,body=payload)
     # print(result)
-    session = RestconfCookieSession('172.29.202.84',8181,'administrator','e2e!Net4u#',scheme='https',ca='/home/david/Workspace/git/certificat/ecdsa_ca.crt',
+    #session = RestconfCookieSession('172.29.202.84',8181,'administrator','e2e!Net4u#',scheme='https',ca='/home/david/Workspace/git/certificat/ecdsa_ca.crt',
+    #        certchain=('/home/david/Workspace/git/certificat/myne111.chain.crt','/home/david/Workspace/git/certificat/private/myne111.key'))
+    session = RestconfSession('172.29.202.84',8181,'administrator','e2e!Net4u#',scheme='https',ca='/home/david/Workspace/git/certificat/ecdsa_ca.crt',
             certchain=('/home/david/Workspace/git/certificat/myne111.chain.crt','/home/david/Workspace/git/certificat/private/myne111.key'))
     session.connect()
     print(session.get("ioa-network-element:ne/equipment/card=1-5"))
