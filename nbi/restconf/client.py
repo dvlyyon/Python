@@ -202,8 +202,8 @@ if __name__ == '__main__':
     parser.add_argument('-ca', '--ca',  help='CA certificate')
     parser.add_argument('--cert',  help='client certificate')
     parser.add_argument('--key',  help='client key')
-    parser.add_argument('-miv', '--minimum_version', default='None', action="store_true", help='minimum_version of TLS') 
-    parser.add_argument('-mxv', '--maximum_version', default='None', action="store_true", help='maximum_version of TLS') 
+    parser.add_argument('-miv', '--minimum_version', default='None', help='minimum_version of TLS') 
+    parser.add_argument('-mxv', '--maximum_version', default='None', help='maximum_version of TLS') 
     parser.add_argument('-klf', '--keylog_filename', help='key log file')
     args = parser.parse_args()
     session = RestconfSession(args.host, args.port, args.user_name, args.passwd,scheme='https',
@@ -213,5 +213,8 @@ if __name__ == '__main__':
             maximum_version=convert_TLS_version(args.maximum_version) if args.maximum_version else None,
             keylog_filename=args.keylog_filename)
     print(session.connect())
-    print(session.get(args.path))
+    import time
+    for i in range(1000):
+        print(session.get(args.path))
+        time.sleep(3)
     session.close()
