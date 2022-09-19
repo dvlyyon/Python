@@ -204,6 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--key',  help='client key')
     parser.add_argument('-miv', '--minimum_version', default='None', help='minimum_version of TLS') 
     parser.add_argument('-mxv', '--maximum_version', default='None', help='maximum_version of TLS') 
+    parser.add_argument('--curve', help='curve for ext key')
     parser.add_argument('-klf', '--keylog_filename', help='key log file')
     args = parser.parse_args()
     session = RestconfSession(args.host, args.port, args.user_name, args.passwd,scheme='https',
@@ -211,6 +212,7 @@ if __name__ == '__main__':
             certchain=(args.cert,args.key) if args.cert else None,
             minimum_version=convert_TLS_version(args.minimum_version) if args.minimum_version else None,
             maximum_version=convert_TLS_version(args.maximum_version) if args.maximum_version else None,
+            curve=args.curve,
             keylog_filename=args.keylog_filename)
     print(session.connect())
     import time
