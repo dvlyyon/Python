@@ -8,6 +8,7 @@ import random
 import nbi.gnmi.client as gclient
 import nbi.netconf.client as nclient
 import nbi.restconf.client as rclient
+import nbi.http.client as hclient
 import nbi.ssh.client as sclient
 
 logger = logging.getLogger(__name__)
@@ -145,7 +146,9 @@ class NetconfInterface(CommonInterface):
 class RestconfInterface(CommonInterface):
 
     def login(self, context):
-        self.client = rclient.RestconfSession(context.ip,context.port,context.user,context.password)
+        self.client = rclient.RestconfSession(context.ip,context.port,context.user,context.password,
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
         status, reason, info = self.client.connect()
         if status != 200 :
             connected = False
@@ -172,10 +175,43 @@ class RestconfInterface(CommonInterface):
         return (r, f"Status: {result}, Reason:{reason}, Output:{output}")
 
 
+class WebGUIInterface(CommonInterface):
+
+    def login(self, context):
+        self.client = hclient.HttpSession(context.ip,context.port,context.user,context.password,
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
+        status, reason, info = self.client.connect()
+        if status != 200 :
+            connected = False
+        else:
+            connected = True
+        return (connected, f"Status: {status}, Reason:{reason}, Info:{info}")        
+
+    def get(self, command):
+        result, reason, output = self.client.get(command.getCommand())
+        if result <=200 and result < 300:
+            r = True
+        else:
+            r = False
+        return (r, f"Status: {result}, Reason:{reason}, Output:{output}")
+
+
+    def set(self, command):
+        # result, reason, output = self.client.patch(command.getCommand(),
+                # command.getArgument("payload"))
+        # if result <=200 and result < 300:
+            # r = True
+        # else:
+            # r = False
+        return (True, "Status: 200, Reason: Not support now, Output: None")
+
 class RestconfCookieInterface(RestconfInterface):
 
     def login(self, context):
-        self.client = rclient.RestconfCookieSession(context.ip,context.port,context.user,context.password,context.get("scheme"))
+        self.client = rclient.RestconfCookieSession(context.ip,context.port,context.user,context.password,context.get("scheme"),
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
         status, reason, info = self.client.connect()
         if status != 204 :
             connected = False
