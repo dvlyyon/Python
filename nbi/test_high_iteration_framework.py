@@ -8,17 +8,22 @@ import random
 import nbi.gnmi.client as gclient
 import nbi.netconf.client as nclient
 import nbi.restconf.client as rclient
+import nbi.http.client as hclient
 import nbi.ssh.client as sclient
 
 logger = logging.getLogger(__name__)
 
 class ConnectContext:
-    def __init__(self, ip, port, user, passwd, connect_timeout=None):
+    def __init__(self, ip, port, user, passwd, connect_timeout=None, others={}):
         self.ip = ip
         self.port = port
         self.user = user
         self.password = passwd
         self.timeout = connect_timeout
+        self.context = others
+
+    def get(self,key):
+        return self.context.get(key)
 
 class Command:
     def __init__(self,command, verify=None, kwargs={}):
@@ -141,7 +146,9 @@ class NetconfInterface(CommonInterface):
 class RestconfInterface(CommonInterface):
 
     def login(self, context):
-        self.client = rclient.RestconfSession(context.ip,context.port,context.user,context.password)
+        self.client = rclient.RestconfSession(context.ip,context.port,context.user,context.password,
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
         status, reason, info = self.client.connect()
         if status != 200 :
             connected = False
@@ -168,12 +175,45 @@ class RestconfInterface(CommonInterface):
         return (r, f"Status: {result}, Reason:{reason}, Output:{output}")
 
 
-class RestconfCookieInterface(RestconfInterface):
+class WebGUIInterface(CommonInterface):
 
-    def connect(self, context):
-        self.client = rclient.RestconfCookieSession(context.ip,context.port,context.user,context.password)
+    def login(self, context):
+        self.client = hclient.HttpSession(context.ip,context.port,context.user,context.password,
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
         status, reason, info = self.client.connect()
         if status != 200 :
+            connected = False
+        else:
+            connected = True
+        return (connected, f"Status: {status}, Reason:{reason}, Info:{info}")        
+
+    def get(self, command):
+        result, reason, output = self.client.get(command.getCommand())
+        if result <=200 and result < 300:
+            r = True
+        else:
+            r = False
+        return (r, f"Status: {result}, Reason:{reason}, Output:{output}")
+
+
+    def set(self, command):
+        # result, reason, output = self.client.patch(command.getCommand(),
+                # command.getArgument("payload"))
+        # if result <=200 and result < 300:
+            # r = True
+        # else:
+            # r = False
+        return (True, "Status: 200, Reason: Not support now, Output: None")
+
+class RestconfCookieInterface(RestconfInterface):
+
+    def login(self, context):
+        self.client = rclient.RestconfCookieSession(context.ip,context.port,context.user,context.password,context.get("scheme"),
+                ca = context.get("ca"),
+                certchain = (context.get("cert"), context.get("key")) if context.get("cert") else None)
+        status, reason, info = self.client.connect()
+        if status != 204 :
             connected = False
         else:
             connected = True
@@ -185,7 +225,7 @@ _buildin_nbi = {"CLI": CLIInterface,
                 "CRESTCONF": RestconfCookieInterface}
 
 
-def high_iteration_run(iter_num,  connect_context, command_context, to_close=True, fail_to_retry=False, delay=0):
+def high_iteration_run(iter_num,  connect_context, command_context, to_close=True, fail_to_retry=False, delay=0, force_delay=False):
     mythread = threading.current_thread();
     mythread.stats={"name": mythread.getName(), "fail": 0, "succ": 0, "start_time": datetime.datetime.now()}
     client = None
@@ -240,7 +280,7 @@ def high_iteration_run(iter_num,  connect_context, command_context, to_close=Tru
                 client = None
         if not fail_to_retry or connected:
             i += 1
-        if delay and not connected:
+        if force_delay or (delay and not connected):
             time.sleep(random.randrange(int(delay)))
     if client:
         client.close()
@@ -308,20 +348,20 @@ if __name__ == "__main__":
     # ch = logging.StreamHandler()
     # ch.setLevel(logging.DEBUG)
     # logger.addHandler(ch)
-    # method_para1 = (10, 'aaa.aaa.aaa.aaa', 22, 'dci', 'xxddd', [Command("ls")], None, True)
-    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 22, 'admin0', 'xxxxxxxx', [Command("show card-1-5")], None, True)
-    method_para2 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para3 = (1000, 'aaa.aaa.aaa.aaa', 8181, 'admin2', 'xxxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
-    method_para4 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin3', 'xxxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
-    method_para5 = (1000, 'aaa.aaa.aaa.aaa', 22, 'admin4', 'xxxxxxxx', [Command("show card-1-5")], None, True)
-    method_para6 = (1000, 'aaa.aaa.aaa.aaa', 8181, 'admin4', 'xxxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
+    # method_para1 = (10, 'aaa.aaa.aaa.aaa', 22, 'xxx', 'xxxxxx', [Command("ls")], None, True)
+    method_para1 = (1000, 'aaa.aaa.aaa.aaa', 22, 'admin0', 'xxxxxxx', [Command("show card-1-5")], None, True)
+    method_para2 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin1', 'xxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
+    method_para3 = (1000, 'aaa.aaa.aaa.aaa', 8181, 'admin2', 'xxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
+    method_para4 = (1000, 'aaa.aaa.aaa.aaa', 830, 'admin3', 'xxxxxxx', [Command("/ne/equipment/card[name='1-5']")], None, True)
+    method_para5 = (1000, 'aaa.aaa.aaa.aaa', 22, 'admin4', 'xxxxxxx', [Command("show card-1-5")], None, True)
+    method_para6 = (1000, 'aaa.aaa.aaa.aaa', 8181, 'admin4', 'xxxxxxx', [Command("ioa-network-element:ne/equipment/card=1-5?depth=2")], None, True)
     test_parallel_sessions([
-                            SessionTask('CLI', 20, cli_session_thread, method_para1),
-                            SessionTask('NETCONF', 20, netconf_session_thread, method_para2),
-                            SessionTask('RESTCONF', 20, restconf_session_thread, method_para3),
-                            SessionTask('NETCONF', 20, netconf_session_thread, method_para4),
-                            SessionTask('CLI', 10, cli_session_thread, method_para5),
-                            SessionTask('RESTCONF', 9, restconf_session_thread, method_para6),
+                            SessionTask('CLI', 20,  method_para1),
+                            SessionTask('NETCONF', 20,  method_para2),
+                            SessionTask('RESTCONF', 20,  method_para3),
+                            SessionTask('NETCONF', 20,  method_para4),
+                            SessionTask('CLI', 10,  method_para5),
+                            SessionTask('RESTCONF', 9, method_para6),
         ],3,360)
 
 
