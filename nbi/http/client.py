@@ -97,6 +97,28 @@ class HttpSession():
             return (412, "Exception", str(e))
 
 
+    def post(self,url,body):
+        try:
+            self.conn.request("POST",f"{url}",
+                              headers={**self.get_json_header, **self.json_content, **self.auth},
+                              body=body)
+            response = self.conn.getresponse()
+            return self._parseresponse(response)
+        except Exception as e:
+            logger.exception(e)
+            return (412, "Exception", str(e))
+
+    def put(self,url,body):
+        try:
+            self.conn.request("PUT",f"{self.root_url}/{url}",
+                              headers={**self.get_json_header, **self.json_content, **self.auth},
+                              body=body)
+            response = self.conn.getresponse()
+            return self._parseresponse(response)
+        except Exception as e:
+            logger.exception(e)
+            return (412, "Exception", str(e))
+
     def getStatus(self):
         try:
             response = self.conn.getresponse()
@@ -134,6 +156,8 @@ if __name__ == '__main__':
     parser.add_argument('-mxv', '--maximum_version', default='None', help='maximum_version of TLS') 
     parser.add_argument('--curve', help='curve for ext key')
     parser.add_argument('-klf', '--keylog_filename', help='key log file')
+    parser.add_argument('--timeout', default=3, help='key log file')
+    parser.add_argument('--loop', default=1000, help='key log file')
     args = parser.parse_args()
     session = HttpSession(args.host, args.port, args.user_name, args.passwd,scheme='https',
             ca=args.ca,
@@ -144,7 +168,7 @@ if __name__ == '__main__':
             keylog_filename=args.keylog_filename)
     print(session.connect())
     import time
-    for i in range(1000):
+    for i in range(int(args.loop)):
         print(session.get(args.path))
-        time.sleep(3)
+        time.sleep(int(args.timeout))
     session.close()
