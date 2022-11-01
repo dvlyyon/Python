@@ -23,6 +23,7 @@ class RestconfSession():
         self.ca = ca
         self.cert = None
         self.key = None
+        self.closed = True
         if certchain:
             self.cert = certchain[0]
             self.key = certchain[1]
@@ -64,6 +65,7 @@ class RestconfSession():
             data = response.read()
             if status == 200:
                 self.root_url = data.decode('utf-8').split("href='")[1].split("'")[0]
+                self.closed = False
             return (status, reason, data.decode('utf-8'))
         except Exception as e:
             logger.exception(e)
@@ -73,10 +75,16 @@ class RestconfSession():
         status = response.status
         reason = response.reason
         data = response.read().decode('utf-8')
+        headers = response.headers
+        if headers.get("connection") and str(headers['connection']).strip() == 'close':
+            self.closed = True
+            
         return (status, reason, data)
 
     def get(self,url):
         try:
+            if self.closed:
+                self.connect() 
             self.conn.request("GET",f"{self.root_url}/data/{url}", headers={**self.get_json_header, **self.auth})
             response = self.conn.getresponse()
             return self._parseresponse(response)
@@ -110,6 +118,7 @@ class RestconfSession():
         if self.conn:
             self.conn.close()
         self.conn = None
+        self.closed = True
 
 class RestconfCookieSession:
     def __init__(self, host, port, username, password, scheme="https", ca=None, certchain=None):
@@ -120,6 +129,7 @@ class RestconfCookieSession:
         self.conn = requests.Session()
         self.baseurl = f"{scheme}://{host}:{port}"
         self.dataurl = f"{self.baseurl}/restconf/data"
+        self.closed = True
         if ca:
             self.conn.verify = ca
         else:
@@ -136,10 +146,14 @@ class RestconfCookieSession:
         return self.login()
 
     def get(self, url):
+        if self.closed:
+            self.connect()
         res = self.conn.get(f"{self.dataurl}/{url}")
         return self._parseresponse(res)
 
     def patch(self,url,json):
+        if self.closed:
+            self.connect()
         res = self.conn.patch(url=f"{self.dataurl}/{url}",json=json)
         return self._parseresponse(res)
 
@@ -147,6 +161,16 @@ class RestconfCookieSession:
         status = response.status_code
         reason = response.reason
         data = response.text
+        headers = response.headers
+        #if status == 204 and self.conn.cookies:
+        if self.conn.cookies:
+            print("connected")
+            for key in self.conn.cookies.keys():
+                print(f'{key} --> {self.conn.cookies.get(key)}')
+            self.closed = False
+        if headers.get("connection") and str(headers['connection']).strip() == 'close':
+            print("closed")
+            self.closed = True
         return (status, reason, data)
 
     def logout(self):
