@@ -15,9 +15,10 @@ class RestconfSession():
         self.password = password
         self.auth = {"Authorization" : "Basic %s" % b64encode(f"{username}:{password}".encode('utf-8')).decode('ascii') }
         self.root_header = {"Accept": "application/xrd+xml"}
-        self.get_xml_header = {"Accept" : "application/yang-data+xml"}
-        self.get_json_header = {"Accept" : "application/yang-data+json"}
-        self.json_content = {"Content-Type" : "application/yang-data+json"}
+        self.output_xml_header = {"Accept" : "application/yang-data+xml"}
+        self.output_json_header = {"Accept" : "application/yang-data+json"}
+        self.input_json_header = {"Content-Type" : "application/yang-data+json"}
+        self.input_xml_header = {"Content-Type" : "application/yang-data+xml"}
         self.connection_header = {"Connection" : "Keep-Alive", "Keep-Alive": "timeout=5, max=100"}
         self.connection_close = {"Connection" : "close"}
         self.ca = ca
@@ -85,7 +86,7 @@ class RestconfSession():
         try:
             if self.closed:
                 self.connect() 
-            self.conn.request("GET",f"{self.root_url}/data/{url}", headers={**self.get_json_header, **self.auth})
+            self.conn.request("GET",f"{self.root_url}/data/{url}", headers={**self.output_json_header, **self.auth})
             response = self.conn.getresponse()
             return self._parseresponse(response)
         except Exception as e:
@@ -96,7 +97,7 @@ class RestconfSession():
     def patch(self,url,body):
         try:
             self.conn.request("PATCH",f"{self.root_url}/data/{url}",
-                              headers={**self.get_json_header, **self.json_content, **self.auth},
+                              headers={**self.output_json_header, **self.input_json_header, **self.auth},
                               body=body)
             response = self.conn.getresponse()
             return self._parseresponse(response)
@@ -104,6 +105,46 @@ class RestconfSession():
             logger.exception(e)
             return (412, "Exception", str(e))
 
+    def create(self, url, body=None, method='POST', iformat='json', oformat='json'):
+        headers = {}
+        if iformat == 'xml':
+            headers = {**self.input_xml_header, **headers}
+        else:
+            headers = {**self.input_json_header, **headers}
+
+        if oformat == 'xml':
+            headers = {**headers, **self.output_xml_header}
+        else:
+            headers = {**headers, **self.output_json_header}
+        headers = {**headers, **self.auth}
+        url = f"{self.root_url}/operations/{url}"
+        
+        if method == "PUT":
+            return self.put(url,headers,body)
+        else:
+            return self.post(url,headers,body) 
+
+    def post(self,url,headers,body):
+        try:
+            self.conn.request("POST",url,
+                               headers=headers,
+                               body=body)
+            response = self.conn.getresponse()
+            return self._parseresponse(response)
+        except Exception as e:
+            logger.exception(e)
+            return (412, "Exception", str(e))
+
+    def put(self,url,headers,body):
+        try:
+            self.conn.request("PUT",url,
+                               headers=headers,
+                               body=body)
+            response = self.conn.getresponse()
+            return self._parseresponse(response)
+        except Exception as e:
+            logger.exception(e)
+            return (412, "Exception", str(e))
 
     def getStatus(self):
         try:
