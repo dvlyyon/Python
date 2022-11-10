@@ -93,17 +93,26 @@ class RestconfSession():
             logger.exception(e)
             return (412, "Exception", str(e))
 
+    def update(self, url, body=None, method='PATCH', iformat='json', oformat='json'):
+        headers = {}
+        if iformat == 'xml':
+            headers = {**self.input_xml_header, **headers}
+        else:
+            headers = {**self.input_json_header, **headers}
 
-    def patch(self,url,body):
-        try:
-            self.conn.request("PATCH",f"{self.root_url}/data/{url}",
-                              headers={**self.output_json_header, **self.input_json_header, **self.auth},
-                              body=body)
-            response = self.conn.getresponse()
-            return self._parseresponse(response)
-        except Exception as e:
-            logger.exception(e)
-            return (412, "Exception", str(e))
+        if oformat == 'xml':
+            headers = {**headers, **self.output_xml_header}
+        else:
+            headers = {**headers, **self.output_json_header}
+        headers = {**headers, **self.auth}
+        url = f"{self.root_url}/data/{url}"
+        print(f'root url: {self.root_url}')
+        print(url)
+        if method == "PUT":
+            return self.put(url,headers,body)
+        else:
+            return self.patch(url,headers,body) 
+
 
     def create(self, url, body=None, method='POST', iformat='json', oformat='json'):
         headers = {}
@@ -117,12 +126,41 @@ class RestconfSession():
         else:
             headers = {**headers, **self.output_json_header}
         headers = {**headers, **self.auth}
-        url = f"{self.root_url}/operations/{url}"
+        url = f"{self.root_url}/data/{url}"
         
         if method == "PUT":
             return self.put(url,headers,body)
+        elif method == "PATCH":
+            return self.patch(url,headers,body)
         else:
             return self.post(url,headers,body) 
+
+    def call_rpc(self, url, body=None, iformat='json', oformat='json'):
+        headers = {}
+        if iformat == 'xml':
+            headers = {**self.input_xml_header, **headers}
+        else:
+            headers = {**self.input_json_header, **headers}
+
+        if oformat == 'xml':
+            headers = {**headers, **self.output_xml_header}
+        else:
+            headers = {**headers, **self.output_json_header}
+        headers = {**headers, **self.auth}
+        url = f"{self.root_url}/operations/{url}"
+        
+        return self.post(url,headers,body) 
+
+    def patch(self,url,headers,body):
+        try:
+            self.conn.request("PATCH",url,
+                              headers=headers,
+                              body=body)
+            response = self.conn.getresponse()
+            return self._parseresponse(response)
+        except Exception as e:
+            logger.exception(e)
+            return (412, "Exception", str(e))
 
     def post(self,url,headers,body):
         try:
@@ -220,79 +258,4 @@ class RestconfCookieSession:
     def close(self):
         self.logout()
 
-def convert_TLS_version(version_str):
-    if version_str == 'TLSv1_2':
-        return ssl.TLSVersion.TLSv1_2
-    elif version_str == 'TLSv1_3':
-        return ssl.TLSVersion.TLSv1_3
-    else:
-        return None
 
-if __name__ == '__main__':
-#    sess = RestconfSession("aaa.aaa.aaa.aaa",8181,"administrator","xxxxxxxx")
-#    print(sess.connect())
-#    s, r, d = sess.get("ioa-network-element:ne/equipment/card[name='1-5']")
-#    print(d)
-
-# username="adm"
-# password="xxxxxxxx"
-# credential = b64encode(f"{username}:{password}".encode('utf-8')).decode("ascii")
-# auth={"Authorization" : "Basic %s" % credential }
-
-# rootheader={"Accept": "application/xrd+xml"}
-# rooturl = "/.well-known/host-meta"
-
-# conn = httpclient.HTTPSConnection('10.13.16.24',8181,context=ssl._create_stdlib_context(ssl.PROTOCOL_TLS))
-# conn.request("GET",rooturl, headers={**rootheader, **auth})
-# res = conn.getresponse()
-# status = res.status
-# reason = res.reason
-# data = res.read()
-# print(data.decode('utf-8'))
-
-# session = RestconfSession('aaa.aaa.aaa.aaa',8181,'xx','ssss')
-# session.connect()
-# url="ioa-network-element:ne/equipment/card=1-5"
-# payload=b'{"ioa-network-element:card":[{"name":"1-5","alias-name":"test-alais"}]}'
-# result, reason, output = session.patch(url,body=payload)
-# print(result)
-#session = RestconfCookieSession('172.29.202.84',8181,'administrator','e2e!Net4u#',scheme='https',ca='/home/david/Workspace/git/certificat/ecdsa_ca.crt',
-#        certchain=('/home/david/Workspace/git/certificat/myne111.chain.crt','/home/david/Workspace/git/certificat/private/myne111.key'))
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--host', required=True, help='The NE IP address')
-    parser.add_argument('-p', '--port', default='830', type=int, help='The Netconf Server port number')
-    parser.add_argument('-u', '--user_name', required=True, help='The user name to login NE')
-    parser.add_argument('-pw', '--passwd', required=True, help='The password for user to login NE')
-    parser.add_argument('--path', required=True, help='The path is to retrieved')
-    parser.add_argument('-ca', '--ca',  help='CA certificate')
-    parser.add_argument('--cert',  help='client certificate')
-    parser.add_argument('--key',  help='client key')
-    parser.add_argument('-miv', '--minimum_version', default='None', help='minimum_version of TLS') 
-    parser.add_argument('-mxv', '--maximum_version', default='None', help='maximum_version of TLS') 
-    parser.add_argument('--curve', help='curve for ext key')
-    parser.add_argument('-klf', '--keylog_filename', help='key log file')
-    parser.add_argument('-l', '--loop', default='1000', type=int, help='times for retrieving')
-    parser.add_argument('--timeout', default='3', type=int, help='interval between two neibor retrieving')
-    parser.add_argument('--type', default='b', type=str, help='client type "b" or "c"')
-    parser.add_argument('--scheme', default='https', type=str, help='client type "b" or "c"')
-
-    args = parser.parse_args()
-    if args.type == 'b':
-        session = RestconfSession(args.host, args.port, args.user_name, 
-                args.passwd,scheme=args.scheme, ca=args.ca,
-                certchain=(args.cert,args.key) if args.cert else None,
-                minimum_version=convert_TLS_version(args.minimum_version) if args.minimum_version else None,
-                maximum_version=convert_TLS_version(args.maximum_version) if args.maximum_version else None,
-                curve=args.curve,
-                keylog_filename=args.keylog_filename)
-    else:
-        session = RestconfCookieSession(args.host, args.port, args.user_name, 
-                args.passwd,scheme=args.scheme, ca=args.ca,
-                certchain=(args.cert,args.key) if args.cert else None)
-
-    print(session.connect())
-    import time
-    for i in range(args.loop):
-        print(session.get(args.path))
-        time.sleep(args.timeout)
-    session.close()
