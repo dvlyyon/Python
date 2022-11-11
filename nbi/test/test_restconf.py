@@ -9,6 +9,18 @@ def convert_TLS_version(version_str):
     else:
         return None
 
+def test_get(args):
+    session = RestconfSession(args.host, args.port, args.user_name, 
+            args.passwd,scheme=args.scheme, ca=args.ca,
+            certchain=(args.cert,args.key) if args.cert else None,
+            minimum_version=convert_TLS_version(args.minimum_version) if args.minimum_version else None,
+            maximum_version=convert_TLS_version(args.maximum_version) if args.maximum_version else None,
+            curve=args.curve,
+            keylog_filename=args.keylog_filename)
+    print(session.connect())
+    print(session.get(args.path,oformat=args.output_format))
+    session.close()
+
 def test_get_in_loop(args):
     if args.type == 'b':
         session = RestconfSession(args.host, args.port, args.user_name, 
@@ -71,7 +83,8 @@ if __name__ == '__main__':
     parser.add_argument('--timeout', default='3', type=int, help='interval between two neibor retrieving')
     parser.add_argument('--type', default='b', type=str, help='client type "b" or "c"')
     parser.add_argument('--scheme', default='https', type=str, help='client type "b" or "c"')
+    parser.add_argument('-of', '--output_format', default='json', help='encoding in response')
 
     args = parser.parse_args()
-    test_patch(args)
+    test_get(args)
 

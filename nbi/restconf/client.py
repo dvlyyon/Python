@@ -82,11 +82,24 @@ class RestconfSession():
             
         return (status, reason, data)
 
-    def get(self,url):
+    def get(self,url,iformat='json', oformat='json'):
+        headers = {}
+        if iformat == 'xml':
+            headers = {**self.input_xml_header, **headers}
+        else:
+            headers = {**self.input_json_header, **headers}
+
+        if oformat == 'xml':
+            headers = {**headers, **self.output_xml_header}
+        else:
+            headers = {**headers, **self.output_json_header}
+        headers = {**headers, **self.auth}
+        url = f"{self.root_url}/data/{url}"
+        return self._get(url,headers)
+
+    def _get(self, url, headers): 
         try:
-            if self.closed:
-                self.connect() 
-            self.conn.request("GET",f"{self.root_url}/data/{url}", headers={**self.output_json_header, **self.auth})
+            self.conn.request("GET",url=url, headers=headers)
             response = self.conn.getresponse()
             return self._parseresponse(response)
         except Exception as e:
@@ -106,8 +119,6 @@ class RestconfSession():
             headers = {**headers, **self.output_json_header}
         headers = {**headers, **self.auth}
         url = f"{self.root_url}/data/{url}"
-        print(f'root url: {self.root_url}')
-        print(url)
         if method == "PUT":
             return self.put(url,headers,body)
         else:
