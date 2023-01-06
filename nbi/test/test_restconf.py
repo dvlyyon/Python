@@ -80,12 +80,12 @@ if __name__ == '__main__':
     parser.add_argument('-mxv', '--maximum_version', default='None', help='maximum_version of TLS') 
     parser.add_argument('--curve', help='curve for ext key')
     parser.add_argument('-klf', '--keylog_filename', help='key log file')
-    parser.add_argument('-l', '--loop', default='1000', type=int, help='times for retrieving')
-    parser.add_argument('--timeout', default='3', type=int, help='interval between two neibor retrieving')
+    parser.add_argument('-l', '--loop', default='10000', type=int, help='times for retrieving')
+    parser.add_argument('--timeout', default='5', type=int, help='interval between two neibor retrieving')
     parser.add_argument('--type', default='b', type=str, help='client type "b" or "c"')
     parser.add_argument('--scheme', default='https', type=str, help='client type "b" or "c"')
     parser.add_argument('-of', '--output_format', default='json', help='encoding in response')
 
     args = parser.parse_args()
-    test_get(args)
+    test_get_in_loop(args)
 

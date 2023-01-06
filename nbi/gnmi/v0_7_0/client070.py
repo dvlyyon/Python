@@ -2,7 +2,7 @@ import grpc
 import logging
 import time
 from queue import ( Queue, Empty )
-from .Auto_Gen_Files import gnmi_pb2, gnmi_pb2_grpc
+from .protocol import gnmi_pb2, gnmi_pb2_grpc
 from ..gnmi_enum import *
 
 logger = logging.getLogger(__name__)
