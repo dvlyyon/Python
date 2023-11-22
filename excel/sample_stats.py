@@ -47,7 +47,7 @@ class KEYS(Enum):
     TIME = "timestamp"
 
 
-TIME_FORMAT = "\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+\+\d\d:\d\d"
+TIME_FORMAT = "\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?\+\d\d:\d\d"
 
 
 def check_one_update(line, lineNo, state):
@@ -97,6 +97,7 @@ def check_one_update(line, lineNo, state):
         if match:
             state[KEYS.UPSTATE]=UpdateLine.TGT
         elif match1:
+            print(f"Line {lineNo}: sync_response is received")
             state[KEYS.SYNC_RESP][KEYS.RT] = state[KEYS.UPDATE][KEYS.TIME][KEYS.RT]
             state[KEYS.SYNC_RESP][KEYS.RTS] = state[KEYS.UPDATE][KEYS.TIME][KEYS.RTS]
             state[KEYS.UPDATE]={}
@@ -159,27 +160,31 @@ def check_one_update(line, lineNo, state):
             print(f"Line {lineNo}: {UpdateLine.VAL} is expected and not")
     elif state[KEYS.UPSTATE] == UpdateLine.V_RT:
         match = re.match(f'\s+"resource-type":\s+".*",$', line)
-        if match:
-            state[KEYS.UPSTATE]=UpdateLine.V_AID
-        else:
+        state[KEYS.UPSTATE]=UpdateLine.V_AID
+        if not match:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
-            print(f"Line {lineNo}: {UpdateLine.V_RT} is expected and not")
+            match = re.match('^}$', line)
+            if match:
+                print(f"Line {lineNo}: Empty block body unexpected received")
+                state[KEYS.UPSTATE]=UpdateLine.V_END
+                check_one_update(line,lineNo,state)
+            else:
+                print(f"Line {lineNo}: {UpdateLine.V_RT} is expected and not")
     elif state[KEYS.UPSTATE] == UpdateLine.V_AID:
         match = re.match(f'\s+"AID":\s+".*",$', line)
-        if match:
-            state[KEYS.UPSTATE]=UpdateLine.V_PV
-        else:
+        state[KEYS.UPSTATE]=UpdateLine.V_PV
+        if not match:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
             print(f"Line {lineNo}: {UpdateLine.V_AID} is expected and not")
     elif state[KEYS.UPSTATE] == UpdateLine.V_PV:
-        match = re.match(f'\s+"pm-value":\s+"[0-9.]+",$', line)
+        match = re.match(f'\s+"pm-value":\s+"[0-9.-]+",$', line)
         state[KEYS.UPSTATE]=UpdateLine.V_PVMIN
         if not match:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
             print(f"Line {lineNo}: {UpdateLine.V_PV} is expected and not for path {state[KEYS.UPDATE][KEYS.PATH]}")
             check_one_update(line,lineNo,state)
     elif state[KEYS.UPSTATE] == UpdateLine.V_PVMIN:
-        match = re.match(f'\s+"pm-value-min":\s+"[0-9.]+",$', line)
+        match = re.match(f'\s+"pm-value-min":\s+"[0-9.-]+",$', line)
         match1 = re.match(f'\s+"pm-unit":\s+".*"$', line)
         if match:
             state[KEYS.UPSTATE]=UpdateLine.V_PVMAX
@@ -191,14 +196,14 @@ def check_one_update(line, lineNo, state):
             print(f"Line {lineNo}: {UpdateLine.V_PVMIN} or {UpdateLine.V_PVUNT} is expected and not")
             check_one_update(line,lineNo,state)
     elif state[KEYS.UPSTATE] == UpdateLine.V_PVMAX:
-        match = re.match(f'\s+"pm-value-max":\s+"[0-9.]+",$', line)
+        match = re.match(f'\s+"pm-value-max":\s+"[0-9.-]+",$', line)
         state[KEYS.UPSTATE]=UpdateLine.V_PVAVG
         if not match:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
             print(f"Line {lineNo}: {UpdateLine.V_PVMAX} is expected and not for path {state[KEYS.UPDATE][KEYS.PATH]}")
             check_one_update(line,lineNo,state)
     elif state[KEYS.UPSTATE] == UpdateLine.V_PVAVG:
-        match = re.match(f'\s+"pm-value-avg":\s+"[0-9.]+",$', line)
+        match = re.match(f'\s+"pm-value-avg":\s+"[0-9.-]+",$', line)
         state[KEYS.UPSTATE]=UpdateLine.V_PVUNT
         if not match:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
@@ -246,4 +251,22 @@ with open(sys.argv[1],'r') as f:
             continue
         check_one_update(line,l, state_m)
         l += 1
-            
+sync_resp_time = state_m[KEYS.SYNC_RESP][KEYS.RT]
+sync_resp_timeS = state_m[KEYS.SYNC_RESP][KEYS.RTS]
+if not sync_resp_time or not sync_resp_timeS:
+    print("ERROR: No sync_response received")
+all_updates = state_m[KEYS.UPDATES]
+for key in all_updates:
+    print(f"{key}:")
+    times = all_updates[key]
+    preT = 0
+    preRT = 0
+    for t in times:
+        t1 = int(t[KEYS.T])
+        t2 = (t1-preT)//1000000
+        t3 = int(t[KEYS.RT])
+        t4 = t3-preRT
+        print(f"\t{t1}\t\t{t2}\t\t{t3}\t\t{t4}") 
+        preT = t1
+        preRT = t3
+
