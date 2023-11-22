@@ -45,6 +45,8 @@ class KEYS(Enum):
     TS = "timeS"
     LN = "lineNo"
     TIME = "timestamp"
+    INIT = "initial"
+
 
 
 TIME_FORMAT = "\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?\+\d\d:\d\d"
@@ -222,14 +224,39 @@ def check_one_update(line, lineNo, state):
             state[KEYS.UPSTATE]=UpdateLine.RT_DPL
             tmp_update = state[KEYS.UPDATES].get(state[KEYS.UPDATE][KEYS.PATH])
             if tmp_update is None:
-                tmp_update = []
+                tmp_update = {}
+                tmp_update[KEYS.INIT]=[]
+                tmp_update[KEYS.SYNC_RESP]=[]
                 state[KEYS.UPDATES][state[KEYS.UPDATE][KEYS.PATH]]=tmp_update
-            tmp_update.append(state[KEYS.UPDATE][KEYS.TIME])
+            if state[KEYS.TOTAL] == State.INIT:
+                tmp_update[KEYS.INIT].append(state[KEYS.UPDATE][KEYS.TIME])
+            else:
+                tmp_update[KEYS.SYNC_RESP].append(state[KEYS.UPDATE][KEYS.TIME])
         else:
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
             print(f"Line {lineNo}: {UpdateLine.V_END} is expected and not")
     else:
         print(f"Line {lineNo}: {line} is unexpected line for an update")
+
+
+def printUpdateTime(times: []):
+    preT = 0
+    preRT = 0
+    first_time = -1
+    i=0
+    for t in times:
+        t1 = int(t[KEYS.T])
+        t2 = (t1-preT)//1000000
+        t3 = int(t[KEYS.RT])
+        t4 = t3-preRT
+        if first_time < 0:
+            first_time = t1
+        base_time = first_time + i*int(sys.argv[2])*1000000000
+        t5 = (t1-base_time)//1000000
+        print(f"\t{t1}\t\t{t2}\t\t{t3}\t\t{t4}\t\t{t5}") 
+        preT = t1
+        preRT = t3
+        i += 1
 
 
 state_m = {KEYS.TOTAL: State.INIT, 
@@ -254,19 +281,23 @@ with open(sys.argv[1],'r') as f:
 sync_resp_time = state_m[KEYS.SYNC_RESP][KEYS.RT]
 sync_resp_timeS = state_m[KEYS.SYNC_RESP][KEYS.RTS]
 if not sync_resp_time or not sync_resp_timeS:
-    print("ERROR: No sync_response received")
+    print("SYNC_ERROR: No sync_response received")
+init_num=1
+samp_num=-1
 all_updates = state_m[KEYS.UPDATES]
 for key in all_updates:
     print(f"{key}:")
     times = all_updates[key]
-    preT = 0
-    preRT = 0
-    for t in times:
-        t1 = int(t[KEYS.T])
-        t2 = (t1-preT)//1000000
-        t3 = int(t[KEYS.RT])
-        t4 = t3-preRT
-        print(f"\t{t1}\t\t{t2}\t\t{t3}\t\t{t4}") 
-        preT = t1
-        preRT = t3
+    printUpdateTime(times[KEYS.INIT])
+    print(f"\t{sync_resp_time}------------------")
+    printUpdateTime(times[KEYS.SYNC_RESP])
+    tmp_init_num = len(times[KEYS.INIT])
+    tmp_samp_num = len(times[KEYS.SYNC_RESP])
+    if samp_num < 0:
+        samp_num = tmp_samp_num
+    if tmp_init_num != init_num:
+        print(f"UPDATE_NUM_ERROR: received more than 1 init update [{tmp_init_num}] for path {key}")
+    if tmp_samp_num != samp_num:
+        print(f"UPDATE_NUM_ERROR: received {tmp_samp_num} sample update [{samp_num}] for path {key}")
+    print(f"update number: init[{init_num}] and sample[{samp_num}]")
 
