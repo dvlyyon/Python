@@ -167,7 +167,7 @@ def check_one_update(line, lineNo, state):
             state[KEYS.UPDATE][KEYS.ERROR]="yes"
             match = re.match('^}$', line)
             if match:
-                print(f"Line {lineNo}: Empty block body unexpected received")
+                print(f"Line {lineNo}: Empty block body unexpected received for path {state[KEYS.UPDATE][KEYS.PATH]}")
                 state[KEYS.UPSTATE]=UpdateLine.V_END
                 check_one_update(line,lineNo,state)
             else:
@@ -258,6 +258,12 @@ def printUpdateTime(times: []):
         preRT = t3
         i += 1
 
+def simplifyPmPath(path: str):
+    d = path.split("direction=")[1].split("]")[0]
+    l = path.split("location=")[1].split("]")[0]
+    p = path.split("parameter=")[1].split("]")[0]
+    r = path.split("resource=")[1].split("/")[-1][0:-1]
+    return f"{r}_{p}_{d}_{l}"
 
 state_m = {KEYS.TOTAL: State.INIT, 
         KEYS.UPSTATE: UpdateLine.RT, 
@@ -280,24 +286,40 @@ with open(sys.argv[1],'r') as f:
         l += 1
 sync_resp_time = state_m[KEYS.SYNC_RESP][KEYS.RT]
 sync_resp_timeS = state_m[KEYS.SYNC_RESP][KEYS.RTS]
+found_error = False
 if not sync_resp_time or not sync_resp_timeS:
+    found_error = True
     print("SYNC_ERROR: No sync_response received")
 init_num=1
 samp_num=-1
 all_updates = state_m[KEYS.UPDATES]
+pathsI = set()
+pathsII = set()
+pathS = {}
 for key in all_updates:
-    print(f"{key}:")
+    spath = simplifyPmPath(key)
+    print(f"{spath}:")
     times = all_updates[key]
     printUpdateTime(times[KEYS.INIT])
     print(f"\t{sync_resp_time}------------------")
     printUpdateTime(times[KEYS.SYNC_RESP])
     tmp_init_num = len(times[KEYS.INIT])
+    if tmp_init_num > 0:
+        pathsI.add(spath)
     tmp_samp_num = len(times[KEYS.SYNC_RESP])
+    if tmp_samp_num > 0:
+        pathsII.add(spath)
     if samp_num < 0:
         samp_num = tmp_samp_num
     if tmp_init_num != init_num:
+        found_error = True
         print(f"UPDATE_NUM_ERROR: received more than 1 init update [{tmp_init_num}] for path {key}")
     if tmp_samp_num != samp_num:
+        found_error = True
         print(f"UPDATE_NUM_ERROR: received {tmp_samp_num} sample update [{samp_num}] for path {key}")
-    print(f"update number: init[{init_num}] and sample[{samp_num}]")
-
+print(f"update number: init[{init_num}] and sample[{samp_num}]")
+print(f"path number [INIT]: {len(pathsI)}  and path number [SYNC]:{len(pathsII)}")
+print("Paths before sync_response:")
+[print(f"\t\t{pp}") for pp in sorted(pathsI)]
+print("Paths after sync_response:")
+[print(f"\t\t{pp}") for pp in sorted(pathsII)]
