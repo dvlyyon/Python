@@ -317,9 +317,9 @@ for key in all_updates:
     if tmp_samp_num != samp_num:
         found_error = True
         print(f"UPDATE_NUM_ERROR: received {tmp_samp_num} sample update [{samp_num}] for path {key}")
-print(f"update number: init[{init_num}] and sample[{samp_num}]")
-print(f"path number [INIT]: {len(pathsI)}  and path number [SYNC]:{len(pathsII)}")
 print("Paths before sync_response:")
 [print(f"\t\t{pp}") for pp in sorted(pathsI)]
 print("Paths after sync_response:")
 [print(f"\t\t{pp}") for pp in sorted(pathsII)]
+print(f"update number: init[{init_num}] and sample[{samp_num}]")
+print(f"path number [INIT]: {len(pathsI)}  and path number [SYNC]:{len(pathsII)}")
