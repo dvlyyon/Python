@@ -239,15 +239,20 @@ def check_one_update(line, lineNo, state):
         print(f"Line {lineNo}: {line} is unexpected line for an update")
 
 
-def printUpdateTime(times: []):
+def printUpdateTime(times: [], myfile):
     preT = 0
     preRT = 0
     first_time = -1
     i=0
     for t in times:
         t1 = int(t[KEYS.T])
-        t2 = (t1-preT)//1000000
+        t1s = t[KEYS.TS]
+        if i == 0:
+            t2 = int(sys.argv[2])*1000
+        else:
+            t2 = (t1-preT)//1000000
         t3 = int(t[KEYS.RT])
+        t3s = t[KEYS.RTS]
         t4 = t3-preRT
         if first_time < 0:
             first_time = t1
@@ -256,13 +261,38 @@ def printUpdateTime(times: []):
         print(f"\t{t1}\t\t{t2}\t\t{t3}\t\t{t4}\t\t{t5}") 
         preT = t1
         preRT = t3
+        if myfile:
+            myfile.write(f"{t1//1000000} {t1s} {t3} {t3s} {t2} {t3-t1//1000000}\n")
         i += 1
+
+
+
+def getID(name: str):
+    obj = name
+    ids = None
+    if "[" in name:
+        parts = name.split("[")
+        obj=parts[0]
+        ids = ".".join([id.split("=")[1][0:-1] for id in parts[1:]])
+    return (obj,ids)
 
 def simplifyPmPath(path: str):
     d = path.split("direction=")[1].split("]")[0]
     l = path.split("location=")[1].split("]")[0]
     p = path.split("parameter=")[1].split("]")[0]
-    r = path.split("resource=")[1].split("/")[-1][0:-1]
+    if ":" in p:
+        p=p.split(":")[1]
+    # r = path.split("resource=")[1].split("/")[-1][0:-1]
+    rl = path.split("resource=")[1].split("/")
+    obj,id = getID(rl[-1][0:-1])
+    idl=[obj]
+    for s in [ getID(ss)[1] for ss in rl[0:-1]]:
+        if s:
+            idl.append(s)
+    if id:
+        idl.append(id)
+    r="-".join(idl)
+
     return f"{r}_{p}_{d}_{l}"
 
 state_m = {KEYS.TOTAL: State.INIT, 
@@ -273,7 +303,7 @@ state_m = {KEYS.TOTAL: State.INIT,
 l=1
 with open(sys.argv[1],'r') as f:
     for line in f:
-        if "Please input what do you" in line:
+        if "Please input what do you" in line or "gnmi-client" in line or "io.grpc" in line :
             l += 1
             continue
         if len(line.strip()) == 0:
@@ -300,9 +330,10 @@ for key in all_updates:
     spath = simplifyPmPath(key)
     print(f"{spath}:")
     times = all_updates[key]
-    printUpdateTime(times[KEYS.INIT])
+    printUpdateTime(times[KEYS.INIT],None)
     print(f"\t{sync_resp_time}------------------")
-    printUpdateTime(times[KEYS.SYNC_RESP])
+    with open(spath, "w") as f:
+        printUpdateTime(times[KEYS.SYNC_RESP], f)
     tmp_init_num = len(times[KEYS.INIT])
     if tmp_init_num > 0:
         pathsI.add(spath)

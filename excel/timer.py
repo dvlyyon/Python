@@ -22,11 +22,13 @@ def drawLineChart(ws, srow, erow, scol, ecol, position, onlyone=False):
     
     s1 = c1.series[0]
     s1.graphicalProperties.line.solidFill = "FF0000"
+    s1.graphicalProperties.line.width = 10000
+    s1.smooth = True
     
     if not onlyone:
         s2 = c1.series[1]
-        s2.graphicalProperties.line.solidFill = "990000"
-        s2.graphicalProperties.line.width = 30000
+        s2.graphicalProperties.line.solidFill = "0000FF"
+        s2.graphicalProperties.line.width = 10000
         s2.smooth = True
     
     ws.add_chart(c1, position)
@@ -70,7 +72,7 @@ file=open(sys.argv[1])
 ws1 = wb.create_sheet("statistics")
 ws2 = wb.create_sheet("statistics %")
 
-sampleInterval=5000
+sampleInterval=int(sys.argv[2])*1000
 
 title = ["Timestamp(ms)", "Timestamp(Str)", "Received Time(ms)", "Received Time(Str)",  "Delta Timestamp", "Rtime-Timestamp", "Timestamp Offset"]
 
@@ -133,8 +135,8 @@ drawPieChart(ws2,1,len(piedata)+1,3,3,"E1")
 
 drawLineChart(ws,1,len(data),5,5, "A"+str(len(data)+5), True)
 drawLineChart(ws,1,len(data),7,7, "A"+str(len(data)+25),True)
-if len(sys.argv) > 2:
-    i = 2
+if len(sys.argv) > 3:
+    i = 3
     while i<len(sys.argv):
         srow=sys.argv[i]
         if '-' in srow:
