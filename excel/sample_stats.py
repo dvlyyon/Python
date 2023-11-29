@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import re
 from enum import Enum,IntEnum
 
@@ -262,7 +263,7 @@ def printUpdateTime(times: [], myfile):
         preT = t1
         preRT = t3
         if myfile:
-            myfile.write(f"{t1//1000000} {t1s} {t3} {t3s} {t2} {t3-t1//1000000}\n")
+            myfile.write(f"{t1//1000000} {t1s} {t3} {t3s} {t2} {t3-preRT}\n")
         i += 1
 
 
@@ -332,7 +333,7 @@ for key in all_updates:
     times = all_updates[key]
     printUpdateTime(times[KEYS.INIT],None)
     print(f"\t{sync_resp_time}------------------")
-    with open(spath, "w") as f:
+    with open(f"{spath}.timer", "w") as f:
         printUpdateTime(times[KEYS.SYNC_RESP], f)
     tmp_init_num = len(times[KEYS.INIT])
     if tmp_init_num > 0:
