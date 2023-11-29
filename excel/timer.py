@@ -143,7 +143,7 @@ for key in sorted(stats1.keys()):
     tmppieline=[]
     tmppieline.append(key)
     tmppieline.append(stats1.get(key))
-    tmppieline.append(stats1.get(key)*100//(n-1))
+    tmppieline.append(stats1.get(key)*100/(n-1))
     piedata.append(tmppieline)
     ws2.append(tmppieline)
 drawPieChart(ws2,1,len(piedata)+1,3,3,"E1")
@@ -154,7 +154,7 @@ for key in sorted(stats2.keys()):
     tmppieline=[]
     tmppieline.append(key)
     tmppieline.append(stats2.get(key))
-    tmppieline.append(stats2.get(key)*100//(n-1))
+    tmppieline.append(stats2.get(key)*100/(n-1))
     piedata.append(tmppieline)
     ws3.append(tmppieline)
 drawPieChart(ws3,1,len(piedata)+1,3,3,"E1")
