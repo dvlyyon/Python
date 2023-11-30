@@ -245,6 +245,15 @@ def printUpdateTime(times: [], myfile):
     preRT = 0
     first_time = -1
     i=0
+    min_sample_interval=sys.maxsize
+    max_sample_interval=-1
+    avg_sample_interval=0
+    min_relative_sample_offset=sys.maxsize
+    max_relative_sample_offset=-1
+    avg_relative_sample_offset=0
+    min_absolute_sample_offset=sys.maxsize
+    max_absolute_sample_offset=-1
+    avg_absolute_sample_offset=0
     for t in times:
         t1 = int(t[KEYS.T])
         t1s = t[KEYS.TS]
@@ -259,12 +268,33 @@ def printUpdateTime(times: [], myfile):
             first_time = t1
         base_time = first_time + i*int(sys.argv[2])*1000000000
         t5 = (t1-base_time)//1000000
+        if i>0:
+            t_r = t2-int(sys.argv[2])*1000
+            t_a = t5
+            min_sample_interval = t2 if t2 < min_sample_interval else min_sample_interval
+            max_sample_interval = t2 if t2 > max_sample_interval else max_sample_interval
+            avg_sample_interval += t2
+            min_relative_sample_offset = abs(t_r) if abs(t_r) < min_relative_sample_offset else min_relative_sample_offset
+            max_relative_sample_offset = abs(t_r) if abs(t_r) > max_relative_sample_offset else max_relative_sample_offset
+            avg_relative_sample_offset += t_r
+            min_absolute_sample_offset = abs(t_a) if abs(t_a) < min_absolute_sample_offset else min_absolute_sample_offset
+            max_absolute_sample_offset = abs(t_a) if abs(t_a) > max_absolute_sample_offset else max_absolute_sample_offset
+            avg_absolute_sample_offset += t_a
         print(f"\t{t1}\t\t{t2}\t\t{t3}\t\t{t4}\t\t{t5}") 
-        preT = t1
-        preRT = t3
         if myfile:
             myfile.write(f"{t1//1000000} {t1s} {t3} {t3s} {t2} {t3-preRT}\n")
+        preT = t1
+        preRT = t3
         i += 1
+    return {"minsi": min_sample_interval,
+            "maxsi": max_sample_interval,
+            "avgsi": avg_sample_interval,
+            "minrso": min_relative_sample_offset,
+            "maxrso": max_relative_sample_offset,
+            "avgrso": avg_relative_sample_offset,
+            "minaso": min_absolute_sample_offset,
+            "maxaso": max_absolute_sample_offset,
+            "avgaso": avg_absolute_sample_offset}
 
 
 
@@ -296,6 +326,77 @@ def simplifyPmPath(path: str):
 
     return f"{r}_{p}_{d}_{l}"
 
+def compareMin(id: str, mystats: dict, mystat: dict, myname: str):
+    if mystats[id]["value"] > mystat[id]:
+        mystats[id]["value"] = mystat[id]
+        mystats[id]["path"] = myname
+
+def compareMax(id: str, mystats: dict, mystat: dict, myname: str):
+    if mystats[id]["value"] < mystat[id]:
+        mystats[id]["value"] = mystat[id]
+        mystats[id]["path"] = myname
+
+def compareAvg(id: str, mystats:dict, mystat:dict, myname: str):
+    if mystats[id]["min"]["value"] > mystat[id]:
+        mystats[id]["min"]["value"] = mystat[id]
+        mystats[id]["min"]["path"] = myname
+    if mystats[id]["max"]["value"] < mystat[id]:
+        mystats[id]["max"]["value"] = mystat[id]
+        mystats[id]["max"]["path"] = myname
+    if mystats[id]["absmin"]["value"] > abs(mystat[id]):
+        mystats[id]["absmin"]["value"] = abs(mystat[id])
+        mystats[id]["absmin"]["path"] = myname
+
+def doStatic(mystats: dict, mystat: dict, myname: str):
+    if len(mystats):
+        compareMin("minsi",mystats,mystat,myname)
+        compareMin("minrso",mystats,mystat,myname)
+        compareMin("minaso",mystats,mystat,myname)
+        compareMax("maxsi",mystats,mystat,myname)
+        compareMax("maxrso",mystats,mystat,myname)
+        compareMax("maxaso",mystats,mystat,myname)
+        compareAvg("avgsi",mystats,mystat,myname)
+        compareAvg("avgrso",mystats,mystat,myname)
+        compareAvg("avgaso",mystats,mystat,myname)
+    else:
+        mystats["minsi"]={"value": mystat["minsi"], "path": myname}
+        mystats["minrso"]={"value": mystat["minrso"], "path": myname}
+        mystats["minaso"]={"value": mystat["minaso"], "path": myname}
+        mystats["maxsi"]={"value": mystat["maxsi"], "path": myname}
+        mystats["maxrso"]={"value": mystat["maxrso"], "path": myname}
+        mystats["maxaso"]={"value": mystat["maxaso"], "path": myname}
+        mystats["avgsi"]={"min": {"value": mystat["avgsi"], "path": myname},
+                           "absmin": {"value": abs(mystat["avgsi"]), "path": myname},
+                          "max": {"value": mystat["avgsi"], "path": myname}}
+        mystats["avgrso"]={"min": {"value": mystat["avgrso"], "path": myname},
+                           "absmin": {"value": abs(mystat["avgrso"]), "path": myname},
+                           "max": {"value": mystat["avgrso"], "path": myname}}
+        mystats["avgaso"]={"min": {"value": mystat["avgaso"], "path": myname},
+                           "absmin": {"value": abs(mystat["avgaso"]), "path": myname},
+                           "max": {"value": mystat["avgaso"], "path": myname}}
+
+def printStat(prefix: str, value, path, select_files: set):
+    print(f'{prefix}: {value},\tPath: {path}')
+    select_files.add(path)
+
+def printStats(mystats: dict, num: int, select_files: set):
+    printStat("Min Sample Interval", mystats["minsi"]["value"], mystats["minsi"]["path"], select_files)
+    printStat('Max Sample Interval', mystats["maxsi"]["value"], mystats["maxsi"]["path"], select_files)
+    printStat("Min Average Sample Interval", mystats["avgsi"]["min"]["value"]/num, mystats["avgsi"]["min"]["path"], select_files)
+    printStat("Min Average Sample Interval (abs)", mystats["avgsi"]["absmin"]["value"]/num, mystats["avgsi"]["absmin"]["path"], select_files)
+    printStat("Max Average Sample Interval", mystats["avgsi"]["max"]["value"]/num, mystats["avgsi"]["max"]["path"], select_files)
+    printStat("Min Relative Sample Offset (abs)", mystats["minrso"]["value"], mystats["minrso"]["path"], select_files)
+    printStat("Max Relative Sample Offset (abs)", mystats["maxrso"]["value"], mystats["maxrso"]["path"], select_files)
+    printStat("Min Average Relative Sample Offset", mystats["avgrso"]["min"]["value"]/num, mystats["avgrso"]["min"]["path"], select_files)
+    printStat("Min Average Relative Sample Offset (abs)", mystats["avgrso"]["absmin"]["value"]/num, mystats["avgrso"]["absmin"]["path"], select_files)
+    printStat("Max Average Relative Sample Offset (abs)", mystats["avgrso"]["max"]["value"]/num, mystats["avgrso"]["max"]["path"], select_files)
+    printStat("Min Absolute Sample Offset (abs)", mystats["minaso"]["value"], mystats["minaso"]["path"], select_files)
+    printStat("Max Absolute Sample Offset (abs)", mystats["maxaso"]["value"], mystats["maxaso"]["path"], select_files)
+    printStat("Min Average Absolute Sample Offset", mystats["avgaso"]["min"]["value"]/num, mystats["avgaso"]["min"]["path"], select_files)
+    printStat("Min Average Absolute Sample Offset (abs)", mystats["avgaso"]["absmin"]["value"]/num, mystats["avgaso"]["absmin"]["path"], select_files)
+    printStat("Max Average Absolute Sample Offset", mystats["avgaso"]["max"]["value"]/num, mystats["avgaso"]["max"]["path"], select_files)
+
+    
 state_m = {KEYS.TOTAL: State.INIT, 
         KEYS.UPSTATE: UpdateLine.RT, 
         KEYS.UPDATE : {}, 
@@ -327,6 +428,7 @@ all_updates = state_m[KEYS.UPDATES]
 pathsI = set()
 pathsII = set()
 pathS = {}
+stats = {}
 for key in all_updates:
     spath = simplifyPmPath(key)
     print(f"{spath}:")
@@ -334,7 +436,8 @@ for key in all_updates:
     printUpdateTime(times[KEYS.INIT],None)
     print(f"\t{sync_resp_time}------------------")
     with open(f"{spath}.timer", "w") as f:
-        printUpdateTime(times[KEYS.SYNC_RESP], f)
+        stat = printUpdateTime(times[KEYS.SYNC_RESP], f)
+        doStatic(stats, stat, spath)
     tmp_init_num = len(times[KEYS.INIT])
     if tmp_init_num > 0:
         pathsI.add(spath)
@@ -355,3 +458,8 @@ print("Paths after sync_response:")
 [print(f"\t\t{pp}") for pp in sorted(pathsII)]
 print(f"update number: init[{init_num}] and sample[{samp_num}]")
 print(f"path number [INIT]: {len(pathsI)}  and path number [SYNC]:{len(pathsII)}")
+to_files=set()
+printStats(stats, samp_num-1, to_files)
+print("check these files:")
+for f in to_files:
+    print(f)

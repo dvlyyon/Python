@@ -60,7 +60,6 @@ def drawPieChart(ws, srow, erow, scol, ecol, position, title="Sampling time diff
     c1.add_data(data1, titles_from_data=True)
     c1.set_categories(labels)
     c1.title = title
-    c1.legend = None
 
     slice = DataPoint(idx=0, explosion=20)
     c1.series[0].data_points = [slice]
