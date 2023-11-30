@@ -134,7 +134,7 @@ for key in sorted(stats.keys()):
     bardata.append(tmpbarline)
     ws1.append(tmpbarline)
 drawBarChart(ws1,2,len(bardata)+1,2,2,"F1")
-drawPieChart(ws1,1,len(bardata)+1,3,3,"Q1",title="Relative sample interval (%)")
+drawPieChart(ws1,1,len(bardata)+1,2,2,"Q1",title="Relative sample interval (%)")
 
 ws2.append(['Relative Rang', 'Number', 'Percent'])
 piedata=[]
@@ -145,7 +145,7 @@ for key in sorted(stats1.keys()):
     tmppieline.append(stats1.get(key)*100/(n-1))
     piedata.append(tmppieline)
     ws2.append(tmppieline)
-drawPieChart(ws2,1,len(piedata)+1,3,3,"E1")
+drawPieChart(ws2,1,len(piedata)+1,3,3,"E1", title="Relative sampling difference")
 
 ws3.append(['Absolute Rang', 'Number', 'Percent'])
 piedata=[]
@@ -156,7 +156,7 @@ for key in sorted(stats2.keys()):
     tmppieline.append(stats2.get(key)*100/(n-1))
     piedata.append(tmppieline)
     ws3.append(tmppieline)
-drawPieChart(ws3,1,len(piedata)+1,3,3,"E1")
+drawPieChart(ws3,1,len(piedata)+1,3,3,"E1", title="Absolute sampling difference based on first update")
 
 drawLineChart(ws,1,len(data),5,5, "J1", True, title="Relative sample interval", ytitle="Interval (ms)",xtitle="Sample No.")
 drawLineChart(ws,1,len(data),7,7, "J20",True, title="Sampling difference based on first update", ytitle="Delta interval (ms)",xtitle="Sample No.")
