@@ -1,3 +1,4 @@
+import os
 import sys
 import subprocess
 import re
@@ -429,13 +430,17 @@ pathsI = set()
 pathsII = set()
 pathS = {}
 stats = {}
+try:
+    os.mkdir("timer")
+except Exception as e:
+    print(e)
 for key in all_updates:
     spath = simplifyPmPath(key)
     print(f"{spath}:")
     times = all_updates[key]
     printUpdateTime(times[KEYS.INIT],None)
     print(f"\t{sync_resp_time}------------------")
-    with open(f"{spath}.timer", "w") as f:
+    with open(f"timer/{spath}.timer", "w") as f:
         stat = printUpdateTime(times[KEYS.SYNC_RESP], f)
         doStatic(stats, stat, spath)
     tmp_init_num = len(times[KEYS.INIT])
